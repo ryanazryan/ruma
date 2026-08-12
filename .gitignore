@@ -1,0 +1,55 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Next.js
+.next/
+out/
+
+# NestJS
+dist/
+
+# Build output
+build/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+
+# Prisma generated files
+prisma/generated/
+
+# Docker local data
+docker-data/
+
+# IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+
+# Cache
+.cache/
+.turbo/
+
+# Generated files
+*.generated.*

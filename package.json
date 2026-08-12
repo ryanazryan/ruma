@@ -1,0 +1,12 @@
+{
+  "name": "moorlife-marketplace",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.30.3",
+  "scripts": {
+    "dev": "pnpm --parallel --filter './apps/*' dev",
+    "build": "pnpm --recursive build",
+    "lint": "pnpm --recursive lint",
+    "test": "pnpm --recursive test"
+  }
+}
