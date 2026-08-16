@@ -1,0 +1,15 @@
+﻿Requirement ID,Feature ID,Module,Notes,Priority,Requirement Name,Requirement Type,Status,Version
+FR-AUTH-001,AUTH-001,AUTH,,Must Have,User Registration,User,Draft,MVP
+FR-AUTH-002,AUTH-001,AUTH,,Must Have,Email Verification,System,Draft,MVP
+FR-AUTH-003,AUTH-002,AUTH,,Must Have,User Login,User,Draft,MVP
+FR-AUTH-004,AUTH-002,AUTH,,Must Have,Credential Validation,System,Draft,MVP
+FR-AUTH-005,AUTH-002,AUTH,,Must Have,Authenticate User Session,System,Draft,MVP
+FR-AUTH-006,AUTH-002,AUTH,,Must Have,Maintain User Authentication,System,Draft,MVP
+FR-AUTH-007,AUTH-002,AUTH,,Must Have,Establish User Session,System,Draft,MVP
+FR-AUTH-008,AUTH-003,AUTH,,Must Have,User Logout,User,Draft,MVP
+FR-AUTH-009,AUTH-003,AUTH,,Must Have,Destroy User Session,System,Draft,MVP
+FR-AUTH-010,AUTH-004,AUTH,,Must Have,Forgot Password Request,User,Draft,MVP
+FR-AUTH-011,AUTH-004,AUTH,,Must Have,Generate Password Reset Token,System,Draft,MVP
+FR-AUTH-012,AUTH-005,AUTH,,Must Have,Reset Password,User,Draft,MVP
+FR-AUTH-013,AUTH-006,AUTH,,Must Have,Refresh Access Token,System,Draft,MVP
+FR-AUTH-014,AUTH-007,AUTH,,Should Have,Change Password,User,Draft,MVP
