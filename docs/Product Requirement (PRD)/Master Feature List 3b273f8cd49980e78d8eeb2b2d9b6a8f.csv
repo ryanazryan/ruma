@@ -1,0 +1,73 @@
+﻿Feature ID,Module,Feature Name,Description,Priority,Release,Status
+AUTH-001,AUTH,Login,Pengguna dapat masuk ke sistem menggunakan email dan password yang valid.,High,MVP,Planned
+AUTH-002,AUTH,Register,Pengguna dapat membuat akun baru menggunakan email.,High,MVP,Planned
+AUTH-003,AUTH,Forgot Password,Pengguna dapat meminta tautan reset password melalui email.,High,MVP,Planned
+AUTH-004,AUTH,Reset Password,Pengguna dapat membuat password baru menggunakan token reset yang valid.,High,MVP,Planned
+AUTH-005,AUTH,Logout,Pengguna dapat mengakhiri sesi login secara aman.,High,MVP,Planned
+AUTH-006,AUTH,Session Management,Sistem mengelola sesi login pengguna.,High,MVP,Planned
+AUTH-007,AUTH,Email Verification,Sistem memverifikasi email pengguna setelah registrasi.,Medium,v1.1,Planned
+AUTH-008,AUTH,Role Management,Sistem mengelola role pengguna.,Medium,v2.0,Planned
+AUTH-009,AUTH,Permission Management,Sistem mengelola hak akses berdasarkan role.,Medium,v2.0,Planned
+CUST-001,CUST,Customer Profile,Pengguna dapat melihat dan mengubah profil.,High,MVP,Planned
+CUST-002,CUST,Address Book,Pengguna dapat mengelola banyak alamat pengiriman.,High,MVP,Planned
+CUST-003,CUST,Change Password,Mengubah password akun.,High,MVP,Planned
+CUST-004,CUST,Wishlist,Menyimpan produk favorit.,High,MVP,Planned
+CUST-005,CUST,Order History,Melihat seluruh riwayat transaksi.,High,MVP,Planned
+CUST-006,CUST,Notification Center,Melihat notifikasi sistem.,Medium,MVP,Planned
+PROD-001,PROD,Product List,Menampilkan daftar produk.,High,MVP,Planned
+PROD-002,PROD,Product Detail,Menampilkan detail produk.,High,MVP,Planned
+PROD-003,PROD,Product Categories,Menampilkan kategori produk.,High,MVP,Planned
+PROD-004,PROD,Product Search,Pencarian produk.,High,MVP,Planned
+PROD-005,PROD,Product Filter,Filter produk berdasarkan atribut.,High,MVP,Planned
+PROD-006,PROD,Product Sorting,Sorting produk.,Medium,MVP,Planned
+PROD-007,PROD,Product Gallery,Menampilkan banyak gambar produk.,High,MVP,Planned
+PROD-008,PROD,Product Reviews,Menampilkan review pelanggan.,Medium,MVP,Planned
+PROD-009,PROD,Product Rating,Menampilkan rating produk.,Medium,MVP,Planned
+PROD-010,PROD,Related Products,Menampilkan produk terkait.,Medium,MVP,Planned
+PROD-011,PROD,Best Seller,Produk terlaris.,Low,v1.1,Planned
+PROD-012,PROD,New Arrival,Produk terbaru.,Low,v1.1,Planned
+SHOP-001,SHOP,Add to Cart,Menambahkan produk ke keranjang.,High,MVP,Planned
+SHOP-002,SHOP,Update Quantity,Mengubah jumlah produk.,High,MVP,Planned
+SHOP-003,SHOP,Remove Item,Menghapus produk dari keranjang.,High,MVP,Planned
+SHOP-004,SHOP,Select Item,Memilih produk untuk checkout.,High,MVP,Planned
+SHOP-005,SHOP,Shipping Estimation,Menghitung estimasi ongkir.,High,MVP,Planned
+SHOP-006,SHOP,Apply Voucher,Menggunakan voucher.,Medium,v1.1,Planned
+CHKOUT-001,CHKOUT,Shipping Address,Memilih alamat pengiriman.,High,MVP,Planned
+CHKOUT-002,CHKOUT,Courier Selection,Memilih kurir.,High,MVP,Planned
+CHKOUT-003,CHKOUT,Shipping Service,Memilih layanan pengiriman.,High,MVP,Planned
+CHKOUT-004,CHKOUT,Payment Method,Memilih metode pembayaran.,High,MVP,Planned
+CHKOUT-005,CHKOUT,Order Summary,Menampilkan ringkasan pesanan.,High,MVP,Planned
+CHKOUT-006,CHKOUT,Place Order,Membuat pesanan.,High,MVP,Planned
+PAY-001,PAY,QRIS Payment,Pembayaran QRIS.,High,MVP,Planned
+PAY-002,PAY,Virtual Account Payment,Pembayaran Virtual Account.,High,MVP,Planned
+PAY-003,PAY,Payment Callback,Callback dari payment gateway.,High,MVP,Planned
+PAY-004,PAY,Payment Status,Menampilkan status pembayaran.,High,MVP,Planned
+PAY-005,PAY,Invoice,Membuat invoice.,High,MVP,Planned
+PAY-006,PAY,Manual Bank Transfer,Transfer manual.,Medium,v1.1,Planned
+ORDER-001,ORDER,Order History,Riwayat pesanan.,High,MVP,Planned
+ORDER-002,ORDER,Order Detail,Detail pesanan.,High,MVP,Planned
+ORDER-003,ORDER,Order Tracking,Melacak pengiriman.,High,MVP,Planned
+ORDER-004,ORDER,Cancel Order,Membatalkan pesanan.,High,MVP,Planned
+ORDER-005,ORDER,Confirm Received,Konfirmasi barang diterima.,High,MVP,Planned
+INV-001,INV,Stock Management,Mengelola stok produk.,High,MVP,Planned
+INV-002,INV,Stock Adjustment,Penyesuaian stok.,High,MVP,Planned
+INV-003,INV,Low Stock Alert,Peringatan stok.,Medium,MVP,Planned
+INV-004,INV,Stock History,Riwayat perubahan stok.,Medium,MVP,Planned
+PROMO-001,PROMO,Banner Management,Mengelola banner promosi.,Medium,MVP,Planned
+PROMO-002,PROMO,Voucher Management,Mengelola voucher.,Medium,v1.1,Planned
+PROMO-003,PROMO,Product Discount,Diskon produk.,Medium,v1.1,Planned
+PROMO-004,PROMO,Flash Sale,Flash Sale.,Low,v2.0,Planned
+REPORT-001,REPORT,Sales Report,Laporan penjualan.,High,MVP,Planned
+REPORT-002,REPORT,Revenue Report,Laporan pendapatan.,High,MVP,Planned
+REPORT-003,REPORT,Product Report,Laporan produk.,Medium,v1.1,Planned
+REPORT-004,REPORT,Customer Report,Laporan pelanggan.,Medium,v1.1,Planned
+NOTIF-001,NOTIF,Email Notification,Notifikasi email.,High,MVP,Planned
+NOTIF-002,NOTIF,Order Notification,Notifikasi perubahan status pesanan.,High,MVP,Planned
+NOTIF-003,NOTIF,Payment Notification,Notifikasi pembayaran.,High,MVP,Planned
+NOTIF-004,NOTIF,WhatsApp Notification,Notifikasi WhatsApp.,Medium,v1.1,Planned
+ADMIN-001,ADMIN,Dashboard,Dashboard administrasi.,High,MVP,Planned
+ADMIN-002,ADMIN,User Management,Mengelola pengguna.,High,MVP,Planned
+ADMIN-003,ADMIN,Activity Log.,Riwayat aktivitas sistem.,Medium,MVP,Planned
+ADMIN-004,ADMIN,Role Management.,Mengelola role.,Medium,v2.0,Planned
+ADMIN-005,ADMIN,Permission Management.,Mengelola permission.,Medium,v2.0,Planned
+ADMIN-006,ADMIN,System Settings,Konfigurasi sistem.,Medium,MVP,Planned
