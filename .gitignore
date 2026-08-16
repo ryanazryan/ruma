@@ -53,3 +53,6 @@ Thumbs.db
 
 # Generated files
 *.generated.*
+
+# TypeScript build cache
+*.tsbuildinfo
