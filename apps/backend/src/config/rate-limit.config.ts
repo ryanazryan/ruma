@@ -1,0 +1,3 @@
+export const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+export const REGISTRATION_RATE_LIMIT = 5;
+export const RESEND_VERIFICATION_RATE_LIMIT = 3;
