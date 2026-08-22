@@ -1,14 +1,34 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Post,
+  Query,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
+import type { Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
+import type { ConfigType } from '@nestjs/config';
+
+import { authConfig } from '../config/auth.config';
 import {
   RATE_LIMIT_WINDOW_MS,
   REGISTRATION_RATE_LIMIT,
   RESEND_VERIFICATION_RATE_LIMIT,
 } from '../config/rate-limit.config';
+
 import { AuthService } from './auth.service';
-import { ApiSuccessResponse } from './auth.types';
+import { ApiSuccessResponse, LoginResponseData } from './auth.types';
+
+import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
+
+import { SessionAuthGuard } from './guards/session-auth.guard';
+import type { AuthenticatedRequest } from './guards/session-auth.guard';
 
 interface RequestLike {
   headers?: Record<string, string | string[] | undefined>;
@@ -38,7 +58,11 @@ function clientIp(request: RequestLike): string {
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    @Inject(authConfig.KEY)
+    private readonly config: ConfigType<typeof authConfig>,
+  ) {}
 
   @Post('register')
   @Throttle({
@@ -50,6 +74,61 @@ export class AuthController {
   })
   register(@Body() dto: RegisterDto): Promise<ApiSuccessResponse> {
     return this.authService.register(dto);
+  }
+
+  @Post('login')
+  @Throttle({
+    default: {
+      limit: 5,
+      ttl: 60_000,
+      getTracker: (request) => clientIp(request as RequestLike),
+    },
+  })
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<ApiSuccessResponse<LoginResponseData>> {
+    const result = await this.authService.login(dto);
+
+    response.cookie('session', result.sessionToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: this.config.sessionTtlHours * 60 * 60 * 1000,
+      path: '/',
+    });
+
+    return result.response;
+  }
+
+  @Get('me')
+  @UseGuards(SessionAuthGuard)
+  me(
+    @Req() request: AuthenticatedRequest,
+  ): Promise<ApiSuccessResponse<LoginResponseData>> {
+    return this.authService.getCurrentUser(request.userId);
+  }
+
+  @Post('logout')
+  @UseGuards(SessionAuthGuard)
+  async logout(
+    @Req() request: AuthenticatedRequest,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<ApiSuccessResponse> {
+    await this.authService.logout(request.sessionId);
+
+    response.clearCookie('session', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+    });
+
+    return {
+      success: true,
+      message: 'Logout successful.',
+      data: null,
+    };
   }
 
   @Get('verify-email')
@@ -66,6 +145,7 @@ export class AuthController {
       ttl: RATE_LIMIT_WINDOW_MS,
       getTracker: (request) => {
         const typedRequest = request as RequestLike;
+
         const email =
           typeof typedRequest.body?.email === 'string'
             ? typedRequest.body.email.trim().toLowerCase()
