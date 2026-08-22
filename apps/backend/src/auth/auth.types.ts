@@ -1,5 +1,21 @@
-export interface ApiSuccessResponse {
-  success: true;
+export interface AuthUserResponse {
+  id: string;
+  fullName: string;
+  email: string;
+  role: string;
+}
+
+export interface LoginResponseData {
+  user: AuthUserResponse;
+}
+
+export interface ApiSuccessResponse<T = null> {
+  success: boolean;
   message: string;
-  data: null;
+  data: T;
+}
+
+export interface LoginResult {
+  response: ApiSuccessResponse<LoginResponseData>;
+  sessionToken: string;
 }

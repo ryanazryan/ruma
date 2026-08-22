@@ -1,20 +1,34 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
+  Inject,
   Injectable,
+  UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
+import type { ConfigType } from '@nestjs/config';
 import { AccountStatus, Prisma } from '@prisma/client';
 import * as argon2 from 'argon2';
+
+import { authConfig } from '../config/auth.config';
 import { VerificationMailService } from '../mail/verification-mail.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { SessionsService } from '../sessions/sessions.service';
 import { UsersService } from '../users/users.service';
+
+import {
+  ApiSuccessResponse,
+  LoginResponseData,
+  LoginResult,
+} from './auth.types';
+import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
-import { ApiSuccessResponse } from './auth.types';
 import { VerificationTokensService } from './verification-tokens.service';
 
 const REGISTRATION_SUCCESS_MESSAGE =
   'Registration successful. Please verify your email.';
+
 const RESEND_SUCCESS_MESSAGE =
   'If the account exists and requires verification, a verification email has been sent.';
 
@@ -25,6 +39,9 @@ export class AuthService {
     private readonly users: UsersService,
     private readonly verificationTokens: VerificationTokensService,
     private readonly verificationMail: VerificationMailService,
+    private readonly sessions: SessionsService,
+    @Inject(authConfig.KEY)
+    private readonly config: ConfigType<typeof authConfig>,
   ) {}
 
   async register(dto: RegisterDto): Promise<ApiSuccessResponse> {
@@ -35,7 +52,9 @@ export class AuthService {
     }
 
     const email = dto.email.trim().toLowerCase();
+
     const existingUser = await this.users.findByEmail(email);
+
     if (existingUser) {
       throw new ConflictException('Email is already registered.');
     }
@@ -50,7 +69,9 @@ export class AuthService {
         email,
         passwordHash,
       });
+
       const { rawToken } = await this.verificationTokens.createForUser(user.id);
+
       const emailSent = await this.verificationMail.sendVerificationEmail(
         user.email,
         rawToken,
@@ -88,6 +109,7 @@ export class AuthService {
     }
 
     const token = await this.verificationTokens.findMatchingToken(rawToken);
+
     if (!token) {
       throw new BadRequestException('Verification token is invalid.');
     }
@@ -103,8 +125,11 @@ export class AuthService {
     }
 
     const user = await this.prisma.user.findUnique({
-      where: { id: token.userId },
+      where: {
+        id: token.userId,
+      },
     });
+
     if (!user) {
       throw new BadRequestException('Verification token is invalid.');
     }
@@ -118,10 +143,16 @@ export class AuthService {
     }
 
     const now = new Date();
+
     const result = await this.prisma.$transaction(async (transaction) => {
       const tokenUpdate = await transaction.verificationToken.updateMany({
-        where: { id: token.id, usedAt: null },
-        data: { usedAt: now },
+        where: {
+          id: token.id,
+          usedAt: null,
+        },
+        data: {
+          usedAt: now,
+        },
       });
 
       if (tokenUpdate.count !== 1) {
@@ -131,7 +162,9 @@ export class AuthService {
       }
 
       return transaction.user.update({
-        where: { id: user.id },
+        where: {
+          id: user.id,
+        },
         data: {
           accountStatus: AccountStatus.ACTIVE,
           emailVerifiedAt: now,
@@ -152,16 +185,103 @@ export class AuthService {
 
   async resendVerification(emailInput: string): Promise<ApiSuccessResponse> {
     const email = emailInput.trim().toLowerCase();
+
     const user = await this.users.findByEmail(email);
 
     if (user?.accountStatus === AccountStatus.PENDING_VERIFICATION) {
       const { rawToken } = await this.verificationTokens.rotateForUser(user.id);
+
       await this.verificationMail.sendVerificationEmail(user.email, rawToken);
     }
 
     return {
       success: true,
       message: RESEND_SUCCESS_MESSAGE,
+      data: null,
+    };
+  }
+
+  async login(dto: LoginDto): Promise<LoginResult> {
+    const email = dto.email.trim().toLowerCase();
+
+    const user = await this.users.findByEmail(email);
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid email or password.');
+    }
+
+    const passwordValid = await argon2.verify(user.passwordHash, dto.password);
+
+    if (!passwordValid) {
+      throw new UnauthorizedException('Invalid email or password.');
+    }
+
+    if (user.accountStatus !== AccountStatus.ACTIVE) {
+      throw new ForbiddenException(
+        'Please verify your email before logging in.',
+      );
+    }
+
+    const { rawToken } = await this.sessions.create(
+      user.id,
+      this.config.sessionTtlHours,
+    );
+
+    await this.prisma.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        lastLoginAt: new Date(),
+      },
+    });
+
+    return {
+      sessionToken: rawToken,
+      response: {
+        success: true,
+        message: 'Login successful.',
+        data: {
+          user: {
+            id: user.id,
+            fullName: user.fullName,
+            email: user.email,
+            role: user.role,
+          },
+        },
+      },
+    };
+  }
+
+  async getCurrentUser(
+    userId: string,
+  ): Promise<ApiSuccessResponse<LoginResponseData>> {
+    const user = await this.users.findById(userId);
+
+    if (!user) {
+      throw new UnauthorizedException('User not found.');
+    }
+
+    return {
+      success: true,
+      message: 'Authenticated user.',
+      data: {
+        user: {
+          id: user.id,
+          fullName: user.fullName,
+          email: user.email,
+          role: user.role,
+        },
+      },
+    };
+  }
+
+  async logout(sessionId: string): Promise<ApiSuccessResponse> {
+    await this.sessions.revoke(sessionId);
+
+    return {
+      success: true,
+      message: 'Logout successful.',
       data: null,
     };
   }
