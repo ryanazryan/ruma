@@ -44,4 +44,38 @@ export class VerificationMailService {
       return false;
     }
   }
+
+  async sendPasswordResetEmail(email: string, token: string): Promise<boolean> {
+    if (!this.resend || !this.config.resendFromEmail) {
+      this.logger.error('Password reset email service is not configured.');
+      return false;
+    }
+
+    const resetUrl = `${this.config.frontendPublicUrl}/reset-password?token=${encodeURIComponent(token)}`;
+
+    try {
+      const result = await this.resend.emails.send({
+        from: this.config.resendFromEmail,
+        to: email,
+        subject: 'Reset your Moorlife Marketplace password',
+        html: `
+        <p>You requested a password reset for your Moorlife Marketplace account.</p>
+        <p>
+          <a href="${resetUrl}">Reset your password</a>
+        </p>
+        <p>This link will expire in 1 hour.</p>
+      `,
+      });
+
+      if (result.error) {
+        this.logger.error('Password reset email delivery was rejected.');
+        return false;
+      }
+
+      return true;
+    } catch {
+      this.logger.error('Password reset email delivery failed.');
+      return false;
+    }
+  }
 }

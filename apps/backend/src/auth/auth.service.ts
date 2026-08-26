@@ -16,6 +16,8 @@ import { VerificationMailService } from '../mail/verification-mail.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SessionsService } from '../sessions/sessions.service';
 import { UsersService } from '../users/users.service';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 import {
   ApiSuccessResponse,
@@ -282,6 +284,98 @@ export class AuthService {
     return {
       success: true,
       message: 'Logout successful.',
+      data: null,
+    };
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto): Promise<ApiSuccessResponse> {
+    const email = dto.email.trim().toLowerCase();
+
+    const user = await this.users.findByEmail(email);
+
+    if (user) {
+      const { rawToken } =
+        await this.verificationTokens.rotatePasswordResetToken(user.id);
+
+      await this.verificationMail.sendPasswordResetEmail(user.email, rawToken);
+    }
+
+    return {
+      success: true,
+      message: 'If the account exists, a password reset email has been sent.',
+      data: null,
+    };
+  }
+
+  async resetPassword(dto: ResetPasswordDto): Promise<ApiSuccessResponse> {
+    if (dto.newPassword !== dto.confirmPassword) {
+      throw new UnprocessableEntityException(
+        'Password confirmation does not match.',
+      );
+    }
+
+    const token = await this.verificationTokens.findMatchingPasswordResetToken(
+      dto.token,
+    );
+
+    if (!token) {
+      throw new BadRequestException(
+        'Password reset token is invalid or expired.',
+      );
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: token.userId,
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException(
+        'Password reset token is invalid or expired.',
+      );
+    }
+
+    const passwordHash = await argon2.hash(dto.newPassword, {
+      type: argon2.argon2id,
+    });
+
+    const now = new Date();
+
+    await this.prisma.$transaction(async (transaction) => {
+      await transaction.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          passwordHash,
+        },
+      });
+
+      await transaction.verificationToken.updateMany({
+        where: {
+          id: token.id,
+          usedAt: null,
+        },
+        data: {
+          usedAt: now,
+        },
+      });
+
+      await transaction.session.updateMany({
+        where: {
+          userId: user.id,
+          revokedAt: null,
+        },
+        data: {
+          revokedAt: now,
+        },
+      });
+    });
+
+    return {
+      success: true,
+      message: 'Password reset successful.',
       data: null,
     };
   }

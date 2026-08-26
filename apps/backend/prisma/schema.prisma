@@ -18,6 +18,7 @@ enum AccountStatus {
 
 enum VerificationTokenType {
   EMAIL_VERIFICATION
+  PASSWORD_RESET
 }
 
 model User {

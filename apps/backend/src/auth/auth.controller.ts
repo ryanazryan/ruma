@@ -26,9 +26,11 @@ import { ApiSuccessResponse, LoginResponseData } from './auth.types';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 
 import { SessionAuthGuard } from './guards/session-auth.guard';
 import type { AuthenticatedRequest } from './guards/session-auth.guard';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 interface RequestLike {
   headers?: Record<string, string | string[] | undefined>;
@@ -159,5 +161,29 @@ export class AuthController {
     @Body() dto: ResendVerificationDto,
   ): Promise<ApiSuccessResponse> {
     return this.authService.resendVerification(dto.email);
+  }
+
+  @Post('forgot-password')
+  @Throttle({
+    default: {
+      limit: 5,
+      ttl: 60_000,
+      getTracker: (request) => clientIp(request as RequestLike),
+    },
+  })
+  forgotPassword(@Body() dto: ForgotPasswordDto): Promise<ApiSuccessResponse> {
+    return this.authService.forgotPassword(dto);
+  }
+
+  @Post('reset-password')
+  @Throttle({
+    default: {
+      limit: 5,
+      ttl: 60_000,
+      getTracker: (request) => clientIp(request as RequestLike),
+    },
+  })
+  resetPassword(@Body() dto: ResetPasswordDto): Promise<ApiSuccessResponse> {
+    return this.authService.resetPassword(dto);
   }
 }
