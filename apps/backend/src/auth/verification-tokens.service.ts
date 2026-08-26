@@ -60,6 +60,32 @@ export class VerificationTokensService {
     return this.createForUser(userId);
   }
 
+  async createPasswordResetToken(
+    userId: string,
+  ): Promise<{ rawToken: string }> {
+    const rawToken = randomBytes(32).toString('base64url');
+
+    const tokenLookup = createHash('sha256').update(rawToken).digest('hex');
+
+    const tokenHash = await bcrypt.hash(rawToken, TOKEN_HASH_ROUNDS);
+
+    const expiresAt = new Date(
+      Date.now() + this.config.passwordResetTokenTtlHours * 60 * 60 * 1000,
+    );
+
+    await this.prisma.verificationToken.create({
+      data: {
+        userId,
+        tokenLookup,
+        tokenHash,
+        type: VerificationTokenType.PASSWORD_RESET,
+        expiresAt,
+      },
+    });
+
+    return { rawToken };
+  }
+
   async findMatchingToken(rawToken: string): Promise<VerificationToken | null> {
     const tokenLookup = createHash('sha256').update(rawToken).digest('hex');
 
@@ -70,6 +96,61 @@ export class VerificationTokensService {
     });
 
     if (!token) {
+      return null;
+    }
+
+    const isValid = await bcrypt.compare(rawToken, token.tokenHash);
+
+    if (!isValid) {
+      return null;
+    }
+
+    return token;
+  }
+
+  async rotatePasswordResetToken(
+    userId: string,
+  ): Promise<{ rawToken: string }> {
+    const now = new Date();
+
+    await this.prisma.verificationToken.updateMany({
+      where: {
+        userId,
+        type: VerificationTokenType.PASSWORD_RESET,
+        usedAt: null,
+      },
+      data: {
+        usedAt: now,
+      },
+    });
+
+    return this.createPasswordResetToken(userId);
+  }
+
+  async findMatchingPasswordResetToken(
+    rawToken: string,
+  ): Promise<VerificationToken | null> {
+    const tokenLookup = createHash('sha256').update(rawToken).digest('hex');
+
+    const token = await this.prisma.verificationToken.findUnique({
+      where: {
+        tokenLookup,
+      },
+    });
+
+    if (!token) {
+      return null;
+    }
+
+    if (token.type !== VerificationTokenType.PASSWORD_RESET) {
+      return null;
+    }
+
+    if (token.usedAt) {
+      return null;
+    }
+
+    if (token.expiresAt <= new Date()) {
       return null;
     }
 

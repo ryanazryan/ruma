@@ -2,6 +2,7 @@ import { registerAs } from '@nestjs/config';
 
 const DEFAULT_TOKEN_TTL_HOURS = 24;
 const DEFAULT_SESSION_TTL_HOURS = 168;
+const DEFAULT_PASSWORD_RESET_TOKEN_TTL_HOURS = 1;
 
 function getPositiveInteger(
   value: string | undefined,
@@ -25,6 +26,11 @@ export const authConfig = registerAs('auth', () => ({
   sessionTtlHours: getPositiveInteger(
     process.env.SESSION_TTL_HOURS,
     DEFAULT_SESSION_TTL_HOURS,
+  ),
+
+  passwordResetTokenTtlHours: getPositiveInteger(
+    process.env.PASSWORD_RESET_TOKEN_TTL_HOURS,
+    DEFAULT_PASSWORD_RESET_TOKEN_TTL_HOURS,
   ),
 
   resendApiKey: process.env.RESEND_API_KEY,
