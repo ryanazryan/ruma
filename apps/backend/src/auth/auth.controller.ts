@@ -103,6 +103,32 @@ export class AuthController {
     return result.response;
   }
 
+  @Post('refresh')
+  @UseGuards(SessionAuthGuard)
+  async refresh(
+    @Req() request: AuthenticatedRequest,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<ApiSuccessResponse> {
+    const result = await this.authService.refreshSession(
+      request.sessionId,
+      request.userId,
+    );
+
+    response.cookie('session', result.sessionToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: this.config.sessionTtlHours * 60 * 60 * 1000,
+      path: '/',
+    });
+
+    return {
+      success: true,
+      message: 'Session refreshed successfully.',
+      data: null,
+    };
+  }
+
   @Get('me')
   @UseGuards(SessionAuthGuard)
   me(
