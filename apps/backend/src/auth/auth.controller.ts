@@ -31,6 +31,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { SessionAuthGuard } from './guards/session-auth.guard';
 import type { AuthenticatedRequest } from './guards/session-auth.guard';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 interface RequestLike {
   headers?: Record<string, string | string[] | undefined>;
@@ -135,6 +136,25 @@ export class AuthController {
     @Req() request: AuthenticatedRequest,
   ): Promise<ApiSuccessResponse<LoginResponseData>> {
     return this.authService.getCurrentUser(request.userId);
+  }
+
+  @Post('change-password')
+  @UseGuards(SessionAuthGuard)
+  async changePassword(
+    @Req() request: AuthenticatedRequest,
+    @Body() dto: ChangePasswordDto,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<ApiSuccessResponse> {
+    const result = await this.authService.changePassword(request.userId, dto);
+
+    response.clearCookie('session', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+    });
+
+    return result;
   }
 
   @Post('logout')

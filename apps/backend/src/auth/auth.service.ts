@@ -18,6 +18,7 @@ import { SessionsService } from '../sessions/sessions.service';
 import { UsersService } from '../users/users.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 import {
   ApiSuccessResponse,
@@ -303,6 +304,67 @@ export class AuthService {
     return {
       success: true,
       message: 'Logout successful.',
+      data: null,
+    };
+  }
+
+  async changePassword(
+    userId: string,
+    dto: ChangePasswordDto,
+  ): Promise<ApiSuccessResponse> {
+    if (dto.newPassword !== dto.confirmPassword) {
+      throw new UnprocessableEntityException(
+        'Password confirmation does not match.',
+      );
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found.');
+    }
+
+    const currentPasswordValid = await argon2.verify(
+      user.passwordHash,
+      dto.currentPassword,
+    );
+
+    if (!currentPasswordValid) {
+      throw new UnauthorizedException('Current password is incorrect.');
+    }
+
+    const passwordHash = await argon2.hash(dto.newPassword, {
+      type: argon2.argon2id,
+    });
+
+    await this.prisma.$transaction(async (transaction) => {
+      await transaction.user.update({
+        where: {
+          id: userId,
+        },
+        data: {
+          passwordHash,
+        },
+      });
+
+      await transaction.session.updateMany({
+        where: {
+          userId,
+          revokedAt: null,
+        },
+        data: {
+          revokedAt: new Date(),
+        },
+      });
+    });
+
+    return {
+      success: true,
+      message: 'Password changed successfully.',
       data: null,
     };
   }
