@@ -255,6 +255,25 @@ export class AuthService {
     };
   }
 
+  async refreshSession(
+    sessionId: string,
+    userId: string,
+  ): Promise<{ sessionToken: string }> {
+    const result = await this.sessions.rotate(
+      sessionId,
+      userId,
+      this.config.sessionTtlHours,
+    );
+
+    if (!result) {
+      throw new UnauthorizedException('Invalid or expired session.');
+    }
+
+    return {
+      sessionToken: result.rawToken,
+    };
+  }
+
   async getCurrentUser(
     userId: string,
   ): Promise<ApiSuccessResponse<LoginResponseData>> {
