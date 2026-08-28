@@ -1,16 +1,18 @@
 services:
   postgres:
     image: postgres:16
-    container_name: moorlife-postgres
+    container_name: ruma-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: moorlife_marketplace
+      POSTGRES_DB: ruma
     ports:
       - "5432:5432"
     volumes:
-      - moorlife_postgres_data:/var/lib/postgresql/data
+      - ruma_postgres_data:/var/lib/postgresql/data
 
 volumes:
-  moorlife_postgres_data:
+  ruma_postgres_data:
+    name: moorlife-marketplace_moorlife_postgres_data
+    external: true
