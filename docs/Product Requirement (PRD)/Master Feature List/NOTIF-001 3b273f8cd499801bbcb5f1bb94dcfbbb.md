@@ -1,6 +1,6 @@
 # NOTIF-001
 
-Description: Notifikasi email.
+Description: The system can send relevant transactional and account notifications through email.
 Feature Name: Email Notification
 Module: NOTIF
 Priority: High

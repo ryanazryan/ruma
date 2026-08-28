@@ -4,287 +4,393 @@
 
 | Item | Value |
 | --- | --- |
-| Project | Moorlife Marketplace |
-| Document Type | Database Design |
-| Version | 1.0 |
-| Status | Draft |
-| Author | Naufal Faiq Azryan |
+| **Project** | Ruma |
+| **Document Type** | Database Design |
+| **Version** | 1.0 |
+| **Status** | Draft |
+| **Author** | Naufal Faiq Azryan |
+| **Role** | Full Stack Software Engineer |
+| **Repository** | `https://github.com/ryanazryan/ruma` |
+| **Start Date** | 05 August 2026 |
+| **Last Updated** | 28 August 2026 |
 
 # Purpose
 
-Dokumen Database Design mendefinisikan struktur basis data Moorlife Marketplace sebagai acuan implementasi, pengelolaan data, dan pengembangan sistem. Dokumen ini mencakup konvensi penamaan, standar tipe data, relasi antar entitas, spesifikasi tabel, strategi indeks, serta batasan integritas data.
+This Database Design document defines the structure, conventions, relationships, constraints, indexing strategy, and migration strategy of the **Ruma** database.
+
+The document serves as a technical reference for backend development, schema evolution, database testing, and system maintenance.
+
+The database design is maintained in alignment with the Ruma SRS, Architecture Design, API Documentation, Prisma schema, and implemented system behavior.
+
+# Database Architecture
+
+Ruma uses **PostgreSQL** as its primary relational database and **Prisma ORM** as the application data access layer.
+
+The database is designed to support:
+
+- Transactional commerce data
+- User and authentication data
+- Product catalog data
+- Inventory data
+- Order and payment data
+- Future multi-brand and multi-supplier expansion
+
+The database should remain independent from any specific product brand.
+
+![image.png](Database%20Design/image.png)
 
 # Database Conventions
 
 | Item | Standard |
 | --- | --- |
-| Database | PostgreSQL |
-| ORM | Prisma ORM |
-| Primary Key | UUID |
-| Timezone | Asia/Makassar |
-| Soft Delete | deleted_at |
-| Timestamp | created_at, updated_at |
-| Naming | snake_case |
-| Charset | UTF-8 |
+| **Database** | PostgreSQL |
+| **ORM** | Prisma ORM |
+| **Primary Key** | UUID |
+| **Timezone** | UTC / database-managed timestamps |
+| **Soft Delete** | `deleted_at` where applicable |
+| **Timestamp** | `created_at`, `updated_at` |
+| **Naming** | `snake_case` |
+| **Encoding** | UTF-8 |
+
+### Timezone note
+
+I would change the old:
+
+> `Asia/Makassar`
+> 
+
+to a more generic database standard unless the application explicitly requires that timezone for persistence.
+
+For backend/database storage, use **UTC** for timestamps, while presentation can be localized to the user's or business timezone.
 
 # Naming Conventions
 
-| Object | Convention |
+| Object | Convention | Example |
+| --- | --- | --- |
+| **Table** | Plural `snake_case` | `verification_tokens` |
+| **Column** | `snake_case` | `created_at` |
+| **Foreign Key** | `<table>_id` | `user_id` |
+| **Enum** | PascalCase | `UserRole` |
+| **Index** | `idx_<table>_<column>` | `idx_sessions_user_id` |
+| **Primary Key** | `<table>_pkey` | `users_pkey` |
+| **Unique Constraint** | `<table>_<column>_key` | `users_email_key` |
+
+# Data Type Standards
+
+| Data Type | Standard |
 | --- | --- |
-| Table | snake_case plural |
-| Column | snake_case |
-| Foreign Key | table_id |
-| Enum | PascalCase |
-| Index | idx_table_column |
+| **Primary / Foreign Key** | UUID |
+| **Short Text** | VARCHAR with explicit length where required |
+| **Long Text** | TEXT |
+| **Boolean** | BOOLEAN |
+| **Timestamp** | TIMESTAMPTZ |
+| **Enumerated Values** | PostgreSQL enum through Prisma |
 
-# Data Types Standard
+Sensitive values such as passwords and credential hashes must use appropriate secure storage types and must never be stored as plain text.
 
-| Type | PostgreSQL |
-| --- | --- |
-| ID | UUID |
-| Email | VARCHAR(255) |
-| Password | TEXT |
-| Token | TEXT |
-| Boolean | BOOLEAN |
-| Date | TIMESTAMPTZ |
+# Entity Relationship Model
 
-# Entity Relationship Diagram (ERD) Current Module
+## Current Database Scope
 
-![current-erd.svg](Database%20Design/current-erd.svg)
+The currently implemented database schema contains:
 
-## ERD Scope
+```
+Users
+Sessions
+Verification Tokens
+```
 
-ERD yang ditampilkan saat ini hanya mencakup **Modul Authentication**, yang terdiri dari:
+These entities support the implemented Authentication module.
 
-- Users
-- Verification Tokens
+Future entities will be introduced incrementally as additional Ruma modules are implemented.
 
-Entitas lain seperti **Products, Categories, Shopping Cart, Orders, Payments, Inventory, Promotions, Notifications,** dan **Reporting** akan ditambahkan secara bertahap seiring dengan proses analisis kebutuhan, perancangan database, dan pengembangan pada masing-masing modul.
+## Current ERD
 
-Setelah seluruh modul inti Moorlife Marketplace selesai dirancang, seluruh entitas akan digabungkan ke dalam **Master Entity Relationship Diagram (Master ERD)** sebagai representasi lengkap struktur basis data sistem.
+![image.png](Database%20Design/image%201.png)
 
-# Table Specifications
+## Entity Specifications
 
-[users](Database%20Design/users%203b373f8cd4998071a069f27992fc9f65.md)
+### Users
 
-[verification_tokens](Database%20Design/verification_tokens%203b373f8cd49980a29589d0116bfe0343.md)
+The `users` table stores account and identity information for Ruma users.
+
+### Current Fields
+
+| Field | Type | Nullable | Notes |
+| --- | --- | --- | --- |
+| `id` | UUID | No | Primary key |
+| `full_name` | VARCHAR(100) | No | User full name |
+| `email` | VARCHAR(255) | No | Unique user email |
+| `password_hash` | TEXT | No | Secure password hash |
+| `role` | UserRole | No | Current role enum |
+| `account_status` | AccountStatus | No | Account state |
+| `email_verified_at` | TIMESTAMPTZ | Yes | Email verification timestamp |
+| `last_login_at` | TIMESTAMPTZ | Yes | Last successful login |
+| `created_at` | TIMESTAMPTZ | No | Creation timestamp |
+| `updated_at` | TIMESTAMPTZ | No | Last update timestamp |
+| `deleted_at` | TIMESTAMPTZ | Yes | Soft delete timestamp |
+
+### Current Role
+
+```
+CUSTOMER
+```
+
+### Current Account Status
+
+```
+PENDING_VERIFICATION
+ACTIVE
+```
+
+# Sessions
+
+The `sessions` table stores authenticated user sessions.
+
+Each session belongs to one user.
+
+## Fields
+
+| Field | Type | Nullable | Notes |
+| --- | --- | --- | --- |
+| `id` | UUID | No | Primary key |
+| `user_id` | UUID | No | Foreign key to `users` |
+| `token_lookup` | TEXT | No | Unique lookup identifier |
+| `token_hash` | TEXT | No | Hashed session credential |
+| `expires_at` | TIMESTAMPTZ | No | Session expiration |
+| `revoked_at` | TIMESTAMPTZ | Yes | Revocation timestamp |
+| `created_at` | TIMESTAMPTZ | No | Creation timestamp |
+| `updated_at` | TIMESTAMPTZ | No | Last update timestamp |
+
+### Session Rules
+
+- Each session belongs to exactly one user.
+- A session with a populated `revoked_at` is revoked.
+- A session past `expires_at` is expired.
+- Session credentials are not stored as raw values.
+- Session rotation may revoke a previous session and create a replacement session.
+
+# Verification Tokens
+
+The `verification_tokens` table stores temporary verification and password-reset credentials.
+
+### Fields
+
+| Field | Type | Nullable | Notes |
+| --- | --- | --- | --- |
+| `id` | UUID | No | Primary key |
+| `user_id` | UUID | No | Foreign key to `users` |
+| `token_lookup` | TEXT | No | Unique lookup identifier |
+| `token_hash` | TEXT | No | Hashed token |
+| `type` | VerificationTokenType | No | Token purpose |
+| `expires_at` | TIMESTAMPTZ | No | Token expiration |
+| `used_at` | TIMESTAMPTZ | Yes | Consumption timestamp |
+| `created_at` | TIMESTAMPTZ | No | Creation timestamp |
+| `updated_at` | TIMESTAMPTZ | No | Last update timestamp |
+
+### Token Types
+
+```
+EMAIL_VERIFICATION
+PASSWORD_RESET
+```
 
 # Index Strategy
 
-## Purpose
-
-Bagian ini mendefinisikan strategi penggunaan indeks pada basis data Moorlife Marketplace untuk meningkatkan performa proses pencarian, penyaringan, pengurutan, dan relasi antar tabel. Seluruh indeks dirancang untuk mengoptimalkan operasi yang sering dilakukan tanpa memberikan beban penulisan data yang berlebihan.
-
-## Indexing Principles
-
-- Primary Key wajib memiliki indeks bawaan.
-- Seluruh Foreign Key harus memiliki indeks.
-- Kolom yang sering digunakan untuk pencarian (`WHERE`) harus memiliki indeks.
-- Kolom yang digunakan untuk `JOIN` harus memiliki indeks.
-- Kolom yang memiliki nilai unik menggunakan **Unique Index**.
-- Hindari membuat indeks pada kolom yang jarang digunakan untuk query.
-- Evaluasi penggunaan indeks dilakukan secara berkala berdasarkan performa query di lingkungan produksi.
-
-## Index Types
-
-| Index Type | Purpose |
-| --- | --- |
-| Primary Key Index | Menjamin keunikan data dan mempercepat pencarian berdasarkan Primary Key. |
-| Unique Index | Menjamin nilai kolom tetap unik, seperti email dan token. |
-| Foreign Key Index | Mempercepat proses relasi antar tabel. |
-| Composite Index | Digunakan pada kombinasi beberapa kolom yang sering diakses bersamaan. |
-| Partial Index | Digunakan pada kondisi tertentu untuk mengurangi ukuran indeks dan meningkatkan efisiensi query. |
-
-## Index Naming Convention
-
-| Index Type | Convention | Example |
-| --- | --- | --- |
-| Primary Key | `{table}_pkey` | `users_pkey` |
-| Unique Index | `{table}_{column}_key` | `users_email_key` |
-| Standard Index | `idx_{table}_{column}` | `idx_users_role` |
-| Composite Index | `idx_{table}_{column1}_{column2}` | `idx_orders_customer_status` |
+The database uses indexes to improve lookup, filtering, joining, and uniqueness enforcement.
 
 ## Current Indexes
 
-| Table | Index |
-| --- | --- |
-| users | Primary Key (`id`) |
-| users | Unique Index (`email`) |
-| users | Index (`role`) |
-| users | Index (`account_status`) |
-| users | Index (`deleted_at`) |
-| verification_tokens | Primary Key (`id`) |
-| verification_tokens | Unique Index (`token_hash`) |
-| verification_tokens | Index (`user_id`) |
-| verification_tokens | Index (`type`) |
-| verification_tokens | Index (`expires_at`) |
+### Users
 
-## Performance Considerations
+```
+Primary Key: id
+Unique: email
+Index: role
+Index: account_status
+Index: deleted_at
+```
 
-- Indeks hanya dibuat pada kolom yang memiliki kebutuhan query yang jelas.
-- Hindari indeks berlebihan karena dapat memperlambat operasi `INSERT`, `UPDATE`, dan `DELETE`.
-- Query yang lambat harus dianalisis menggunakan **EXPLAIN ANALYZE** sebelum menambahkan indeks baru.
-- Strategi indeks harus dievaluasi kembali setiap kali terdapat perubahan pola penggunaan sistem.
+### Sessions
 
-## Future Enhancements
+```
+Primary Key: id
+Unique: token_lookup
+Unique: token_hash
+Index: user_id
+Index: expires_at
+Index: revoked_at
+```
 
-- Menambahkan Composite Index pada tabel transaksi seperti `orders`, `payments`, dan `inventory` sesuai kebutuhan query.
-- Menggunakan Partial Index untuk data aktif (`deleted_at IS NULL`) apabila volume data meningkat.
-- Melakukan optimasi indeks berdasarkan hasil monitoring performa database di lingkungan produksi.
-- Meninjau kembali strategi indeks secara berkala seiring bertambahnya jumlah pengguna dan data.
+### Verification Tokens
 
-# Constraints
+```
+Primary Key: id
+Unique: token_lookup
+Unique: token_hash
+Index: user_id
+Index: type
+Index: expires_at
+```
 
-## Purpose
+## Indexing Principles
 
-Bagian ini mendefinisikan standar penggunaan *database constraints* pada seluruh basis data Moorlife Marketplace untuk menjaga integritas, konsistensi, dan validitas data. Seluruh tabel yang dikembangkan pada sistem wajib mengikuti standar constraint yang telah ditetapkan dalam dokumen ini.
+- Primary keys are indexed automatically.
+- Unique fields use unique indexes/constraints.
+- Foreign keys should be indexed when needed for relationship lookups.
+- Frequently queried fields should be indexed based on actual query patterns.
+- Avoid unnecessary indexes on low-value fields.
+- Query performance should be verified before introducing additional indexes.
+
+# Constraints & Data Integrity
 
 ## Constraint Principles
 
-Seluruh tabel dalam database Moorlife Marketplace harus menerapkan prinsip-prinsip berikut:
+Each relational entity should:
 
-- Setiap tabel wajib memiliki Primary Key.
-- Setiap relasi antar tabel wajib menggunakan Foreign Key.
-- Seluruh data penting wajib menggunakan NOT NULL apabila nilai tersebut harus selalu tersedia.
-- Kolom yang memerlukan keunikan wajib menggunakan Unique Constraint.
-- Nilai yang memiliki pilihan terbatas wajib menggunakan Enum.
-- Seluruh constraint harus diterapkan pada tingkat database, bukan hanya pada aplikasi.
+- Have a primary key.
+- Define foreign key relationships where applicable.
+- Enforce required values using `NOT NULL`.
+- Enforce uniqueness where required.
+- Use enums for controlled values where appropriate.
+- Enforce critical integrity rules at the database level.
 
-## Constraint Types
+## Current Integrity Rules
 
-| Constraint Type | Purpose |
-| --- | --- |
-| Primary Key | Menjamin setiap record memiliki identitas yang unik. |
-| Foreign Key | Menjaga integritas relasi antar tabel. |
-| Unique Constraint | Mencegah data duplikat pada kolom tertentu. |
-| NOT NULL | Memastikan kolom wajib selalu memiliki nilai. |
-| Enum Constraint | Membatasi nilai hanya pada pilihan yang telah ditentukan. |
-| Default Value | Memberikan nilai awal secara otomatis ketika data dibuat. |
+- User email must be unique.
+- Each session must reference an existing user.
+- Each verification token must reference an existing user.
+- Session lookup values must be unique.
+- Verification token lookup values must be unique.
+- Token hashes must be securely stored.
+- Password hashes must not contain plain-text passwords.
 
-## Referential Integrity
-
-Untuk menjaga konsistensi data, seluruh relasi antar tabel harus memenuhi aturan berikut:
-
-- Setiap Foreign Key harus mengacu pada Primary Key tabel tujuan.
-- Tidak diperbolehkan terdapat data yatim (*orphan record*) akibat relasi yang tidak valid.
-- Seluruh relasi harus dikelola menggunakan Foreign Key Constraint.
-- Perubahan struktur relasi harus dilakukan melalui migration agar konsistensi tetap terjaga.
-
-## Delete Strategy
+# Delete Strategy
 
 | Data Type | Strategy |
 | --- | --- |
-| Master Data | Soft Delete |
-| Transaction Data | Tidak dihapus secara fisik |
-| Verification Token | Hard Delete atau Scheduled Cleanup setelah tidak diperlukan |
-| Log & Audit | Tidak dihapus kecuali sesuai kebijakan retensi data |
+| **User / Master Data** | Soft delete where appropriate |
+| **Authentication Sessions** | Revoke rather than restore as valid |
+| **Verification Tokens** | Can be invalidated and cleaned up |
+| **Transaction Data** | Preserve historical records |
+| **Audit / Log Data** | Retain according to retention policy |
 
-## Update Strategy
-
-- Primary Key tidak boleh diubah setelah data dibuat.
-- Foreign Key hanya dapat diubah apabila tetap menjaga integritas relasi.
-- Kolom `updated_at` harus diperbarui secara otomatis setiap kali terjadi perubahan data.
-- Kolom audit harus tetap mempertahankan riwayat perubahan yang diperlukan.
-
-## Data Integrity Rules
-
-- Email pengguna harus unik di seluruh sistem.
-- Password hanya boleh disimpan dalam bentuk hash.
-- Token verifikasi harus unik dan hanya dapat digunakan satu kali.
-- Seluruh Foreign Key harus mengacu pada data yang masih valid.
-- Data yang menggunakan Soft Delete tidak boleh ditampilkan pada proses bisnis normal.
-
-## Validation Responsibility
-
-| Layer | Responsibility |
-| --- | --- |
-| Frontend | Validasi format input pengguna. |
-| Backend | Validasi aturan bisnis dan logika aplikasi. |
-| Database | Validasi integritas data menggunakan constraint. |
-
-## Future Enhancements
-
-- Menambahkan Check Constraint untuk validasi nilai tertentu apabila diperlukan.
-- Menambahkan kebijakan referential action (`ON DELETE` dan `ON UPDATE`) yang lebih spesifik sesuai kebutuhan tiap modul.
-- Mengintegrasikan audit trail untuk melacak perubahan data penting.
-- Melakukan evaluasi constraint secara berkala seiring berkembangnya struktur database.
+The final delete strategy for commerce entities will be defined when those modules are introduced.
 
 # Migration Strategy
 
-## Purpose
-
-Bagian ini mendefinisikan strategi pengelolaan perubahan struktur basis data (database schema) pada Moorlife Marketplace. Seluruh perubahan terhadap tabel, relasi, indeks, maupun constraint harus dilakukan melalui mekanisme migration agar setiap perubahan dapat dilacak, diuji, dan diterapkan secara konsisten pada seluruh environment.
+Ruma uses **Prisma Migrate** for schema evolution.
 
 ## Migration Principles
 
-- Seluruh perubahan struktur database wajib menggunakan migration.
-- Perubahan schema tidak diperbolehkan dilakukan langsung pada database produksi.
-- Setiap migration harus memiliki riwayat perubahan (*version history*) yang jelas.
-- Migration harus dapat dijalankan secara berurutan dan dapat direproduksi pada environment lain.
-- Seluruh migration harus disimpan dalam sistem version control (Git).
+- Database structure changes must be performed through migrations.
+- Production schema changes must not be applied manually.
+- Migration history must be version-controlled.
+- Migrations must be tested in development before production deployment.
+- Previously deployed production migrations must not be edited.
+- Schema changes should originate from `schema.prisma`.
 
-## Migration Tool
+![image.png](Database%20Design/image%202.png)
+
+## Migration Tooling
 
 | Item | Technology |
 | --- | --- |
-| ORM | Prisma ORM |
-| Migration Tool | Prisma Migrate |
-| Database | PostgreSQL |
-| Version Control | Git |
+| **Database** | PostgreSQL |
+| **ORM** | Prisma ORM |
+| **Migration Tool** | Prisma Migrate |
+| **Version Control** | Git |
 
-## Migration Workflow
+# Database Security
 
-![migration-workflow.png](Database%20Design/migration-workflow.png)
+The database layer must protect sensitive application data.
 
-## Migration Naming Convention
+### Authentication Data
 
-| Convention | Example |
+- Passwords are stored only as secure hashes.
+- Session credentials are not stored in plain text.
+- Verification and password-reset credentials are securely stored.
+- Database credentials must be managed through environment configuration.
+
+### Access Control
+
+- Production database access must be restricted.
+- Application access should use controlled database credentials.
+- Direct public access to PostgreSQL must not be exposed.
+
+# Scalability & Extensibility
+
+The database must support future catalog expansion without structural dependence on specific brands.
+
+The product model will conceptually follow:
+
+![image.png](Database%20Design/image%203.png)
+
+Future examples may include:
+
+```
+Moorlife
+Cleo Oxygen
+Tupperware
+Tas Purun
+Future Brands
+Future Imported Products
+```
+
+These are **data values**, not hardcoded database structures.
+
+Additional commerce entities will be introduced as their modules are implemented:
+
+```
+Product
+Product Variant
+Inventory
+Cart
+Cart Item
+Order
+Order Item
+Payment
+Shipment
+Promotion
+Review
+Notification
+```
+
+# Current Database Status
+
+| Area | Status |
 | --- | --- |
-| create_table | create_users |
-| add_column | add_last_login_at_to_users |
-| modify_column | modify_email_length |
-| drop_column | drop_unused_column |
-| create_index | create_users_email_index |
-| add_foreign_key | add_order_customer_fk |
+| **Users** | ✅ Implemented |
+| **Sessions** | ✅ Implemented |
+| **Verification Tokens** | ✅ Implemented |
+| **Product Catalog** | ⏳ Planned |
+| **Inventory** | ⏳ Planned |
+| **Shopping Cart** | ⏳ Planned |
+| **Orders** | ⏳ Planned |
+| **Payments** | ⏳ Planned |
+| **Promotions** | ⏳ Planned |
+| **Notifications** | ⏳ Planned |
+| **Reporting** | ⏳ Planned |
 
-## Version Control Strategy
+# Related Documents
 
-- Seluruh migration disimpan dalam repository Git.
-- Migration tidak boleh diubah setelah diterapkan pada environment production.
-- Setiap perubahan schema harus dibuat sebagai migration baru.
-- Review terhadap migration dilakukan sebelum proses deployment.
+### Product & Business
 
-## Deployment Strategy
+- [Vision](Vision%203b273f8cd4998078b747dd9f26f4a904.md)
+- [Product Requirement (PRD)](Product%20Requirement%20(PRD)%203b273f8cd49980aaa876eeb7623fa9fb.md)
+- [Master Feature List](Product%20Requirement%20(PRD)/Master%20Feature%20List%203b273f8cd49980e78d8eeb2b2d9b6a8f.md)
+- [Roadmap](Roadmap%203b273f8cd49980c393d3d8e24631d3bd.md)
 
-- Migration dijalankan terlebih dahulu sebelum deployment aplikasi.
-- Deployment hanya dilakukan apabila migration berhasil dieksekusi tanpa error.
-- Backup database harus tersedia sebelum menjalankan migration pada environment production.
-- Migration pada production harus dilakukan secara terjadwal untuk meminimalkan risiko gangguan layanan.
+### Engineering
 
-## Rollback Strategy
+- [Software Requirement (SRS)](Software%20Requirement%20(SRS)%203b273f8cd49980bbb8e5f324d0b5dfb1.md)
+- [Architecture Design](Architecture%20Design%203b373f8cd499801ab4b3e2c029c24da5.md)
+- [API Documentation](API%20Documentation%203b273f8cd49980d1b823e2a12377fe32.md)
+- [Tech Stack](Tech%20Stack%203b273f8cd499806baf4cd1b9bf770e3d.md)
+- [Development Guide](Development%20Guide%203b373f8cd49980afbcdbedacc9fc5607.md)
 
-Apabila migration gagal atau menimbulkan masalah pada production, langkah-langkah berikut harus dilakukan:
+### Design
 
-1. Hentikan proses deployment.
-2. Identifikasi penyebab kegagalan migration.
-3. Pulihkan database menggunakan backup apabila diperlukan.
-4. Buat migration baru untuk memperbaiki perubahan sebelumnya.
-5. Lakukan pengujian kembali sebelum deployment ulang.
-
-> **Catatan:** Prisma Migrate tidak mendukung rollback otomatis seperti beberapa migration tool lainnya. Oleh karena itu, setiap perubahan schema harus direncanakan dengan matang dan didukung oleh mekanisme backup database.
-> 
-
-## Best Practices
-
-- Satu migration hanya berisi satu perubahan logis.
-- Hindari menggabungkan banyak perubahan besar dalam satu migration.
-- Selalu lakukan pengujian migration pada environment development sebelum diterapkan ke production.
-- Jangan mengubah file migration yang sudah pernah dijalankan pada production.
-- Seluruh perubahan schema harus berasal dari pembaruan `schema.prisma`.
-
-## Future Enhancements
-
-- Otomatisasi proses migration melalui CI/CD Pipeline.
-- Validasi migration menggunakan automated testing sebelum deployment.
-- Integrasi notifikasi deployment apabila migration berhasil atau gagal.
-- Dokumentasi riwayat migration sebagai bagian dari release management.
+- [UI Inspiration](UI%20Inspiration%203b273f8cd4998074b97fff76c5618742.md)
+- [Sitemap](Product%20Requirement%20(PRD)%203b273f8cd49980aaa876eeb7623fa9fb.md)
+- [User Journey](Product%20Requirement%20(PRD)%203b273f8cd49980aaa876eeb7623fa9fb.md)
