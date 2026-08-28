@@ -8,15 +8,25 @@ export interface ApiResponse {
   errors?: string[];
 }
 
-async function request(path: string, options?: RequestInit): Promise<ApiResponse> {
+async function request(
+  path: string,
+  options?: RequestInit,
+): Promise<ApiResponse> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
   });
+
   const body = (await response.json()) as ApiResponse;
+
   if (!response.ok) {
     throw new Error(body.message || 'Unable to complete the request.');
   }
+
   return body;
 }
 
@@ -37,5 +47,15 @@ export function resendVerification(email: string): Promise<ApiResponse> {
   return request('/auth/verify-email/resend', {
     method: 'POST',
     body: JSON.stringify({ email }),
+  });
+}
+
+export function loginUser(payload: {
+  email: string;
+  password: string;
+}): Promise<ApiResponse> {
+  return request('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify(payload),
   });
 }
