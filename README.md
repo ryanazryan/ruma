@@ -1,6 +1,8 @@
-# Moorlife Marketplace
+# Ruma
 
-Moorlife Marketplace adalah platform e-commerce berbasis web yang dikembangkan untuk mendukung proses penjualan, pengelolaan produk, pesanan, inventaris, pembayaran, dan operasional marketplace Moorlife.
+Ruma is a scalable multi-brand lifestyle marketplace designed to support product discovery, shopping, checkout, payments, order management, inventory, and marketplace operations.
+
+The platform is designed to support products from multiple brands, suppliers, and categories while providing an extensible foundation for future business and commerce capabilities.
 
 ## Project Status
 
@@ -9,34 +11,74 @@ Moorlife Marketplace adalah platform e-commerce berbasis web yang dikembangkan u
 ## Tech Stack
 
 ### Frontend
+
 - Next.js
 - React
 - TypeScript
 - Tailwind CSS
 
 ### Backend
+
 - NestJS
 - TypeScript
 - Prisma ORM
 
-### Database
+### Database & Infrastructure
+
 - PostgreSQL
 - Redis
+- Docker
 
 ### External Services
+
 - Midtrans
 - Biteship
 - Cloudinary
 - Resend
 
-## Repository Structure
+## Core Modules
+
+- Authentication
+- Customer
+- Product
+- Shopping
+- Checkout
+- Payment
+- Order
+- Inventory
+- Promotion
+- Notification
+- Reporting
+- Administration
+
+## Architecture
+
+Ruma uses a modular monolith architecture with a separate web frontend and backend REST API.
 
 ```text
-apps/
-├── frontend/
-└── backend/
-
-packages/
-docs/
-docker/
-.github/
+Web Browser
+    │
+    ▼
+Next.js / React
+    │
+    ▼
+NestJS REST API
+    │
+    ├── Authentication
+    ├── Customer
+    ├── Product
+    ├── Shopping
+    ├── Checkout
+    ├── Payment
+    ├── Order
+    ├── Inventory
+    ├── Promotion
+    ├── Notification
+    ├── Reporting
+    └── Administration
+    │
+    ▼
+Prisma ORM
+    │
+    ▼
+PostgreSQL

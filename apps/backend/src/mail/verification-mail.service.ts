@@ -29,8 +29,8 @@ export class VerificationMailService {
       const result = await this.resend.emails.send({
         from: this.config.resendFromEmail,
         to: email,
-        subject: 'Verify your Moorlife Marketplace email',
-        html: `<p>Welcome to Moorlife Marketplace.</p><p><a href="${verificationUrl}">Verify your email</a></p>`,
+        subject: 'Verify your Ruma email',
+        html: `<p>Welcome to Ruma.</p><p><a href="${verificationUrl}">Verify your email</a></p>`,
       });
 
       if (result.error) {
@@ -57,9 +57,8 @@ export class VerificationMailService {
       const result = await this.resend.emails.send({
         from: this.config.resendFromEmail,
         to: email,
-        subject: 'Reset your Moorlife Marketplace password',
-        html: `
-        <p>You requested a password reset for your Moorlife Marketplace account.</p>
+        subject: 'Reset your Ruma password',
+        html: `<p>You requested a password reset for your Ruma account.</p>
         <p>
           <a href="${resetUrl}">Reset your password</a>
         </p>

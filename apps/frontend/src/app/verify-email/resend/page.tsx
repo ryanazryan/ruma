@@ -18,7 +18,7 @@ export default function ResendVerificationPage() {
           <ResendVerificationForm />
         </div>
 
-        <Link
+        <Link 
           className="mt-6 inline-block font-medium text-emerald-700 hover:underline"
           href="/register"
         >

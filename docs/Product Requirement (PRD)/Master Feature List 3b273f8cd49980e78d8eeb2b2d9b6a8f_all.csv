@@ -1,73 +1,72 @@
 ﻿Feature ID,Description,Feature Name,Module,Priority,Release,Status
-AUTH-001,Pengguna dapat masuk ke sistem menggunakan email dan password yang valid.,Login,AUTH,High,MVP,Planned
-AUTH-002,Pengguna dapat membuat akun baru menggunakan email.,Register,AUTH,High,MVP,Planned
-AUTH-003,Pengguna dapat meminta tautan reset password melalui email.,Forgot Password,AUTH,High,MVP,Planned
-AUTH-004,Pengguna dapat membuat password baru menggunakan token reset yang valid.,Reset Password,AUTH,High,MVP,Planned
-AUTH-005,Pengguna dapat mengakhiri sesi login secara aman.,Logout,AUTH,High,MVP,Planned
-AUTH-006,Sistem mengelola sesi login pengguna.,Session Management,AUTH,High,MVP,Planned
-AUTH-007,Sistem memverifikasi email pengguna setelah registrasi.,Email Verification,AUTH,Medium,v1.1,Planned
-AUTH-008,Sistem mengelola role pengguna.,Role Management,AUTH,Medium,v2.0,Planned
-AUTH-009,Sistem mengelola hak akses berdasarkan role.,Permission Management,AUTH,Medium,v2.0,Planned
-CUST-001,Pengguna dapat melihat dan mengubah profil.,Customer Profile,CUST,High,MVP,Planned
-CUST-002,Pengguna dapat mengelola banyak alamat pengiriman.,Address Book,CUST,High,MVP,Planned
-CUST-003,Mengubah password akun.,Change Password,CUST,High,MVP,Planned
-CUST-004,Menyimpan produk favorit.,Wishlist,CUST,High,MVP,Planned
-CUST-005,Melihat seluruh riwayat transaksi.,Order History,CUST,High,MVP,Planned
-CUST-006,Melihat notifikasi sistem.,Notification Center,CUST,Medium,MVP,Planned
-PROD-001,Menampilkan daftar produk.,Product List,PROD,High,MVP,Planned
-PROD-002,Menampilkan detail produk.,Product Detail,PROD,High,MVP,Planned
-PROD-003,Menampilkan kategori produk.,Product Categories,PROD,High,MVP,Planned
-PROD-004,Pencarian produk.,Product Search,PROD,High,MVP,Planned
-PROD-005,Filter produk berdasarkan atribut.,Product Filter,PROD,High,MVP,Planned
-PROD-006,Sorting produk.,Product Sorting,PROD,Medium,MVP,Planned
-PROD-007,Menampilkan banyak gambar produk.,Product Gallery,PROD,High,MVP,Planned
-PROD-008,Menampilkan review pelanggan.,Product Reviews,PROD,Medium,MVP,Planned
-PROD-009,Menampilkan rating produk.,Product Rating,PROD,Medium,MVP,Planned
-PROD-010,Menampilkan produk terkait.,Related Products,PROD,Medium,MVP,Planned
-PROD-011,Produk terlaris.,Best Seller,PROD,Low,v1.1,Planned
-PROD-012,Produk terbaru.,New Arrival,PROD,Low,v1.1,Planned
-SHOP-001,Menambahkan produk ke keranjang.,Add to Cart,SHOP,High,MVP,Planned
-SHOP-002,Mengubah jumlah produk.,Update Quantity,SHOP,High,MVP,Planned
-SHOP-003,Menghapus produk dari keranjang.,Remove Item,SHOP,High,MVP,Planned
-SHOP-004,Memilih produk untuk checkout.,Select Item,SHOP,High,MVP,Planned
-SHOP-005,Menghitung estimasi ongkir.,Shipping Estimation,SHOP,High,MVP,Planned
-SHOP-006,Menggunakan voucher.,Apply Voucher,SHOP,Medium,v1.1,Planned
-CHKOUT-001,Memilih alamat pengiriman.,Shipping Address,CHKOUT,High,MVP,Planned
-CHKOUT-002,Memilih kurir.,Courier Selection,CHKOUT,High,MVP,Planned
-CHKOUT-003,Memilih layanan pengiriman.,Shipping Service,CHKOUT,High,MVP,Planned
-CHKOUT-004,Memilih metode pembayaran.,Payment Method,CHKOUT,High,MVP,Planned
-CHKOUT-005,Menampilkan ringkasan pesanan.,Order Summary,CHKOUT,High,MVP,Planned
-CHKOUT-006,Membuat pesanan.,Place Order,CHKOUT,High,MVP,Planned
+AUTH-001,Users can create a new account using their email and password and verify their email address before account,User Registration,AUTH,High,MVP,Planned
+AUTH-002,Users can authenticate using valid email and password credentials and establish a secure authentication session.,User Login,AUTH,High,MVP,Planned
+AUTH-003,Users can securely end their active authentication session.,User Logout,AUTH,High,MVP,Planned
+AUTH-004,Users can request a password reset using their registered email address.,Forgot Password,AUTH,High,MVP,Planned
+AUTH-005,Users can set a new password using a valid and unused password reset token.,Reset Password,AUTH,High,MVP,Planned
+AUTH-006,The system can rotate an active authentication session without requiring the user to log in again.,Session Refresh,AUTH,High,MVP,Planned
+AUTH-007,Authenticated users can change their current password.,Change Password,AUTH,Medium,MVP,Planned
+AUTH-008,Administrators can manage user roles and role assignments.,Role Management,AUTH,Medium,v2.0,Planned
+AUTH-009,Administrators can manage permissions and access policies.,Permission Management,AUTH,Medium,v2.0,Planned
+CUST-001,Customers can view and update their profile information.,Customer Profile,CUST,High,MVP,Planned
+CUST-002,Customers can manage multiple shipping addresses and set a default address.,Address Book,CUST,High,MVP,Planned
+CUST-003,Customers can save products to a personal wishlist.,Wishlist,CUST,High,MVP,Planned
+CUST-004,Customers can view their previous orders and transaction history.,Order History,CUST,High,MVP,Planned
+PROD-001,Customers can browse the available products in the Ruma catalog.,Product List,PROD,High,MVP,Planned
+PROD-002,Customers can view detailed information about a product.,Product Detail,PROD,High,MVP,Planned
+PROD-003,Customers can browse products by category and subcategory.,Product Categories,PROD,High,MVP,Planned
+PROD-004,Customers can search for products by relevant keywords such as product name.,Product Search,PROD,High,MVP,Planned
+PROD-005,"Customers can filter products by attributes such as category, brand, supplier, and price.",Product Filter,PROD,High,MVP,Planned
+PROD-006,"Customers can sort products based on supported sorting options such as price, newest, or relevance.",Product Sorting,PROD,Medium,MVP,Planned
+PROD-007,Customers can view multiple images and media associated with a product.,Product Gallery,PROD,High,MVP,Planned
+PROD-008,Customers can view reviews submitted for a product.,Product Reviews,PROD,Medium,MVP,Planned
+PROD-009,Customers can view the average rating and rating distribution of a product.,Product Rating,PROD,Medium,MVP,Planned
+PROD-010,Customers can discover products related to the product they are viewing.,Related Products,PROD,Medium,MVP,Planned
+PROD-011,The system can identify and display best-selling products.,Best Seller,PROD,Low,v1.1,Planned
+PROD-012,The system can identify and display newly added products.,New Arrival,PROD,Low,v1.1,Planned
+SHOP-001,Customers can add available products to their shopping cart.,Add to Cart,SHOP,High,MVP,Planned
+SHOP-002,Customers can change the quantity of products in their shopping cart.,Update Quantity,SHOP,High,MVP,Planned
+SHOP-003,Customers can remove products from their shopping cart.,Remove Item,SHOP,High,MVP,Planned
+SHOP-004,Customers can select products in their cart for checkout.,Select Item,SHOP,High,MVP,Planned
+SHOP-005,Customers can estimate shipping costs based on selected products and shipping destination.,Shipping Estimation,SHOP,High,MVP,Planned
+SHOP-006,Customers can apply eligible vouchers to their shopping cart.,Apply Voucher,SHOP,Medium,v1.1,Planned
+CHKOUT-001,Customers can select a shipping address from their saved addresses during checkout.,Shipping Address,CHKOUT,High,MVP,Planned
+CHKOUT-002,Customers can select a supported shipping courier for their order.,Courier Selection,CHKOUT,High,MVP,Planned
+CHKOUT-003,Customers can select an available shipping service based on the selected courier and destination.,Shipping Service,CHKOUT,High,MVP,Planned
+CHKOUT-004,Customers can select an available payment method for their order.,Payment Method,CHKOUT,High,MVP,Planned
+CHKOUT-005,"Customers can review the products, quantities, shipping cost, discounts, and total amount before placing an order.",Order Summary,CHKOUT,High,MVP,Planned
+CHKOUT-006,Customers can place an order after all required checkout information has been completed and validated.,Place Order,CHKOUT,High,MVP,Planned
 PAY-001,Pembayaran QRIS.,QRIS Payment,PAY,High,MVP,Planned
 PAY-002,Pembayaran Virtual Account.,Virtual Account Payment,PAY,High,MVP,Planned
 PAY-003,Callback dari payment gateway.,Payment Callback,PAY,High,MVP,Planned
 PAY-004,Menampilkan status pembayaran.,Payment Status,PAY,High,MVP,Planned
 PAY-005,Membuat invoice.,Invoice,PAY,High,MVP,Planned
 PAY-006,Transfer manual.,Manual Bank Transfer,PAY,Medium,v1.1,Planned
-ORDER-001,Riwayat pesanan.,Order History,ORDER,High,MVP,Planned
-ORDER-002,Detail pesanan.,Order Detail,ORDER,High,MVP,Planned
-ORDER-003,Melacak pengiriman.,Order Tracking,ORDER,High,MVP,Planned
-ORDER-004,Membatalkan pesanan.,Cancel Order,ORDER,High,MVP,Planned
-ORDER-005,Konfirmasi barang diterima.,Confirm Received,ORDER,High,MVP,Planned
-INV-001,Mengelola stok produk.,Stock Management,INV,High,MVP,Planned
-INV-002,Penyesuaian stok.,Stock Adjustment,INV,High,MVP,Planned
-INV-003,Peringatan stok.,Low Stock Alert,INV,Medium,MVP,Planned
-INV-004,Riwayat perubahan stok.,Stock History,INV,Medium,MVP,Planned
-PROMO-001,Mengelola banner promosi.,Banner Management,PROMO,Medium,MVP,Planned
-PROMO-002,Mengelola voucher.,Voucher Management,PROMO,Medium,v1.1,Planned
-PROMO-003,Diskon produk.,Product Discount,PROMO,Medium,v1.1,Planned
-PROMO-004,Flash Sale.,Flash Sale,PROMO,Low,v2.0,Planned
-REPORT-001,Laporan penjualan.,Sales Report,REPORT,High,MVP,Planned
-REPORT-002,Laporan pendapatan.,Revenue Report,REPORT,High,MVP,Planned
-REPORT-003,Laporan produk.,Product Report,REPORT,Medium,v1.1,Planned
-REPORT-004,Laporan pelanggan.,Customer Report,REPORT,Medium,v1.1,Planned
-NOTIF-001,Notifikasi email.,Email Notification,NOTIF,High,MVP,Planned
-NOTIF-002,Notifikasi perubahan status pesanan.,Order Notification,NOTIF,High,MVP,Planned
-NOTIF-003,Notifikasi pembayaran.,Payment Notification,NOTIF,High,MVP,Planned
-NOTIF-004,Notifikasi WhatsApp.,WhatsApp Notification,NOTIF,Medium,v1.1,Planned
-ADMIN-001,Dashboard administrasi.,Dashboard,ADMIN,High,MVP,Planned
-ADMIN-002,Mengelola pengguna.,User Management,ADMIN,High,MVP,Planned
-ADMIN-003,Riwayat aktivitas sistem.,Activity Log.,ADMIN,Medium,MVP,Planned
-ADMIN-004,Mengelola role.,Role Management.,ADMIN,Medium,v2.0,Planned
-ADMIN-005,Mengelola permission.,Permission Management.,ADMIN,Medium,v2.0,Planned
-ADMIN-006,Konfigurasi sistem.,System Settings,ADMIN,Medium,MVP,Planned
+ORDER-001,Customers can view their previous and current orders and transaction history.,Order History,ORDER,High,MVP,Planned
+ORDER-002,"Customers can view detailed information about an order, including items, payment, shipping, and order status.",Order Detail,ORDER,High,MVP,Planned
+ORDER-003,Customers can track the status and shipment progress of their orders.,Order Tracking,ORDER,High,MVP,Planned
+ORDER-004,Customers can cancel eligible orders before the order enters processing or fulfillment.,Cancel Order,ORDER,High,MVP,Planned
+ORDER-005,Customers can confirm that an order has been successfully received.,Confirm Received,ORDER,High,MVP,Planned
+INV-001,Administrators can monitor and manage product stock levels across the Ruma catalog.,Stock Management,INV,High,MVP,Planned
+INV-002,Authorized administrators can adjust stock quantities and record the reason for each adjustment.,Stock Adjustment,INV,High,MVP,Planned
+INV-003,The system can notify authorized users when product stock reaches a defined low-stock threshold.,Low Stock Alert,INV,Medium,MVP,Planned
+INV-004,The system can record and display historical changes to product stock quantities.,Stock History,INV,Medium,MVP,Planned
+PROMO-001,"Administrators can create, update, schedule, and manage promotional banners displayed across Ruma.",Banner Management,PROMO,Medium,MVP,Planned
+PROMO-002,"Administrators can create and manage vouchers with defined eligibility, validity, and usage rules.",Voucher Management,PROMO,Medium,v1.1,Planned
+PROMO-003,Administrators can configure discounts for eligible products during a defined promotional period.,Product Discount,PROMO,Medium,v1.1,Planned
+PROMO-004,Administrators can configure time-limited promotional campaigns with selected products and promotional prices.,Flash Sale,PROMO,Low,v2.0,Planned
+REPORT-001,Administrators can view reports of completed and processed sales transactions.,Sales Report,REPORT,High,MVP,Planned
+REPORT-002,Administrators can monitor revenue generated from marketplace transactions.,Revenue Report,REPORT,High,MVP,Planned
+REPORT-003,"Administrators can analyze product performance, including sales and product-level activity.",Product Report,REPORT,Medium,v1.1,Planned
+REPORT-004,Administrators can view customer-related metrics and purchasing activity.,Customer Report,REPORT,Medium,v1.1,Planned
+NOTIF-001,The system can send relevant transactional and account notifications through email.,Email Notification,NOTIF,High,MVP,Planned
+NOTIF-002,The system can notify customers about changes to their order status.,Order Notification,NOTIF,High,MVP,Planned
+NOTIF-003,The system can notify customers about payment events and payment status changes.,Payment Notification,NOTIF,High,MVP,Planned
+NOTIF-004,The system can send selected transactional notifications through WhatsApp.,WhatsApp Notification,NOTIF,Medium,v1.1,Planned
+ADMIN-001,"Administrators can view key marketplace metrics, operational summaries, and system status.",Admin Dashboard,ADMIN,High,MVP,Planned
+ADMIN-002,Administrators can view and manage customer accounts and user-related information.,User Management,ADMIN,High,MVP,Planned
+ADMIN-003,The system records and allows administrators to review important administrative and system activities.,Activity Log.,ADMIN,Medium,MVP,Planned
+ADMIN-004,Administrators can manage configurable marketplace and system settings.,System Settings,ADMIN,Medium,MVP,Planned
+CUST-005,Customers can view in-app notifications related to their account and activities.,Notification Center,CUST,Medium,MVP,Planned
+PROD-013,The system can manage brands associated with products in the Ruma catalog.,Brand Management,PROD,High,MVP,Planned
+PROD-014,The system can manage suppliers associated with products in the Ruma catalog.,Supplier Management,PROD,High,MVP,Planned
