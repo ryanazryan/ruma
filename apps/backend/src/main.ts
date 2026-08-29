@@ -12,8 +12,9 @@ async function bootstrap() {
   app.setGlobalPrefix('api/v1');
 
   app.enableCors({
-    origin: process.env.FRONTEND_PUBLIC_URL ?? 'http://localhost:3000',
-  });
+  origin: process.env.FRONTEND_PUBLIC_URL ?? 'http://localhost:3000',
+  credentials: true,
+});
 
   app.useGlobalPipes(
     new ValidationPipe({
