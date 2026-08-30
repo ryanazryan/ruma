@@ -221,6 +221,26 @@ Profile photo storage requires a media reference associated with the customer ac
 
 The final persistence strategy for the profile photo will be defined during implementation based on the selected Cloudinary integration approach.
 
+### Customer Addresses
+
+The `customer_addresses` table stores shipping addresses belonging to customer accounts.
+
+| Field | Type | Nullable | Notes |
+|---|---|---|---|
+| `id` | UUID | No | Primary key |
+| `user_id` | UUID | No | Foreign key to `users` |
+| `label` | VARCHAR(50) | No | Customer-defined address label |
+| `recipient_name` | VARCHAR(100) | No | Shipping recipient name |
+| `phone` | VARCHAR(30) | No | Recipient contact number |
+| `address_line` | TEXT | No | Street/address details |
+| `district` | VARCHAR(100) | No | District |
+| `city` | VARCHAR(100) | No | City/regency |
+| `province` | VARCHAR(100) | No | Province |
+| `postal_code` | VARCHAR(10) | No | Postal code |
+| `is_default` | BOOLEAN | No | Indicates the customer's default shipping address |
+| `created_at` | TIMESTAMPTZ | No | Creation timestamp |
+| `updated_at` | TIMESTAMPTZ | No | Last update timestamp |
+
 # Index Strategy
 
 The database uses indexes to improve lookup, filtering, joining, and uniqueness enforcement.

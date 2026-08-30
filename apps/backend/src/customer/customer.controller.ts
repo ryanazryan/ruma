@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  Param,
   Patch,
   Post,
   Req,
@@ -10,7 +11,6 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Express } from 'express';
 
@@ -18,6 +18,8 @@ import { CustomerService } from './customer.service';
 import { UpdateCustomerProfileDto } from './dto/update-customer-profile.dto';
 import { SessionAuthGuard } from '../auth/guards/session-auth.guard';
 import type { AuthenticatedRequest } from '../auth/guards/session-auth.guard';
+import { CreateCustomerAddressDto } from './dto/create-customer-address.dto';
+import { UpdateCustomerAddressDto } from './dto/update-customer-address.dto';
 
 @Controller('customer')
 export class CustomerController {
@@ -78,6 +80,82 @@ export class CustomerController {
       message: 'Profile photo updated successfully.',
       data: {
         profilePhoto,
+      },
+    };
+  }
+
+  @Get('addresses')
+  @UseGuards(SessionAuthGuard)
+  async getAddresses(@Req() request: AuthenticatedRequest) {
+    const addresses = await this.customerService.getAddresses(request.userId);
+
+    return {
+      success: true,
+      message: 'Customer addresses retrieved successfully.',
+      data: {
+        addresses,
+      },
+    };
+  }
+
+  @Post('addresses')
+  @UseGuards(SessionAuthGuard)
+  async createAddress(
+    @Req() request: AuthenticatedRequest,
+    @Body() dto: CreateCustomerAddressDto,
+  ) {
+    const address = await this.customerService.createAddress(
+      request.userId,
+      dto,
+    );
+
+    return {
+      success: true,
+      message: 'Customer address created successfully.',
+      data: {
+        address,
+      },
+    };
+  }
+
+  @Patch('addresses/:addressId/default')
+  @UseGuards(SessionAuthGuard)
+  async setDefaultAddress(
+    @Req() request: AuthenticatedRequest,
+    @Param('addressId') addressId: string,
+  ) {
+    const address = await this.customerService.setDefaultAddress(
+      request.userId,
+      addressId,
+    );
+
+    return {
+      success: true,
+      message: 'Default customer address updated successfully.',
+      data: {
+        address,
+      },
+    };
+  }
+
+  @Patch('addresses/:addressId')
+  @UseGuards(SessionAuthGuard)
+  async updateAddress(
+    @Req() request: AuthenticatedRequest,
+    @Param('addressId') addressId: string,
+    @Body() dto: UpdateCustomerAddressDto,
+  ) {
+    const address = await this.customerService.updateAddress(
+      request.userId,
+      addressId,
+      dto,
+    );
+
+    return {
+      success: true,
+      message: 'Customer address updated successfully.',
+      data: {
+        address,
       },
     };
   }
