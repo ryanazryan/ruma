@@ -30,7 +30,7 @@ The development API is currently accessed through:
 
 | Environment | URL |
 | --- | --- |
-| **Development** | `http://localhost:3001` |
+| **Development** | `http://localhost:3000` |
 | **Staging** | Not configured |
 | **Production** | Not configured |
 

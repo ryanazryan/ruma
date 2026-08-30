@@ -1,14 +1,20 @@
 import { Module } from '@nestjs/common';
+import { CustomerModule } from './customer/customer.module';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
 import { RATE_LIMIT_WINDOW_MS } from './config/rate-limit.config';
 import { PrismaModule } from './prisma/prisma.module';
+import { cloudinaryConfig } from './config/cloudinary.config';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [cloudinaryConfig],
+    }),
     ThrottlerModule.forRoot([
       {
         name: 'default',
@@ -18,6 +24,8 @@ import { PrismaModule } from './prisma/prisma.module';
     ]),
     PrismaModule,
     AuthModule,
+    CustomerModule,
+    CloudinaryModule,
   ],
   providers: [
     {

@@ -1,13 +1,13 @@
 ﻿Feature ID,Module,Feature Name,Description,Priority,Release,Status
-AUTH-001,AUTH,User Registration,Users can create a new account using their email and password and verify their email address before account,High,MVP,Planned
-AUTH-002,AUTH,User Login,Users can authenticate using valid email and password credentials and establish a secure authentication session.,High,MVP,Planned
-AUTH-003,AUTH,User Logout,Users can securely end their active authentication session.,High,MVP,Planned
-AUTH-004,AUTH,Forgot Password,Users can request a password reset using their registered email address.,High,MVP,Planned
-AUTH-005,AUTH,Reset Password,Users can set a new password using a valid and unused password reset token.,High,MVP,Planned
-AUTH-006,AUTH,Session Refresh,The system can rotate an active authentication session without requiring the user to log in again.,High,MVP,Planned
-AUTH-007,AUTH,Change Password,Authenticated users can change their current password.,Medium,MVP,Planned
-AUTH-008,AUTH,Role Management,Administrators can manage user roles and role assignments.,Medium,v2.0,Planned
-AUTH-009,AUTH,Permission Management,Administrators can manage permissions and access policies.,Medium,v2.0,Planned
+AUTH-001,AUTH,User Registration,Users can create a new account using their email and password and verify their email address before account,High,MVP,Completed
+AUTH-002,AUTH,User Login,Users can authenticate using valid email and password credentials and establish a secure authentication session.,High,MVP,Completed
+AUTH-003,AUTH,User Logout,Users can securely end their active authentication session.,High,MVP,Completed
+AUTH-004,AUTH,Forgot Password,Users can request a password reset using their registered email address.,High,MVP,Completed
+AUTH-005,AUTH,Reset Password,Users can set a new password using a valid and unused password reset token.,High,MVP,Completed
+AUTH-006,AUTH,Session Refresh,The system can rotate an active authentication session without requiring the user to log in again.,High,MVP,Completed
+AUTH-007,AUTH,Change Password,Authenticated users can change their current password.,Medium,MVP,Completed
+AUTH-008,AUTH,Role Management,Administrators can manage user roles and role assignments.,Medium,v2.0,Completed
+AUTH-009,AUTH,Permission Management,Administrators can manage permissions and access policies.,Medium,v2.0,Completed
 CUST-001,CUST,Customer Profile,Customers can view and update their profile information.,High,MVP,Planned
 CUST-002,CUST,Address Book,Customers can manage multiple shipping addresses and set a default address.,High,MVP,Planned
 CUST-003,CUST,Wishlist,Customers can save products to a personal wishlist.,High,MVP,Planned

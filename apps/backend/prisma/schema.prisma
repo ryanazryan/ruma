@@ -22,17 +22,19 @@ enum VerificationTokenType {
 }
 
 model User {
-  id                String              @id @default(uuid()) @db.Uuid
-  fullName          String              @map("full_name") @db.VarChar(100)
-  email             String              @unique @db.VarChar(255)
-  passwordHash      String              @map("password_hash")
-  role              UserRole            @default(CUSTOMER)
-  accountStatus     AccountStatus       @default(PENDING_VERIFICATION) @map("account_status")
-  emailVerifiedAt   DateTime?           @map("email_verified_at") @db.Timestamptz(6)
-  lastLoginAt       DateTime?           @map("last_login_at") @db.Timestamptz(6)
-  createdAt         DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedAt         DateTime?           @map("deleted_at") @db.Timestamptz(6)
+  id                   String        @id @default(uuid()) @db.Uuid
+  fullName             String        @map("full_name") @db.VarChar(100)
+  email                String        @unique @db.VarChar(255)
+  passwordHash         String        @map("password_hash")
+  role                 UserRole      @default(CUSTOMER)
+  accountStatus        AccountStatus @default(PENDING_VERIFICATION) @map("account_status")
+  emailVerifiedAt      DateTime?     @map("email_verified_at") @db.Timestamptz(6)
+  lastLoginAt          DateTime?     @map("last_login_at") @db.Timestamptz(6)
+  profilePhotoUrl      String?       @map("profile_photo_url")
+  profilePhotoPublicId String?       @map("profile_photo_public_id")
+  createdAt            DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt            DateTime?     @map("deleted_at") @db.Timestamptz(6)
 
   verificationTokens VerificationToken[]
   sessions           Session[]
