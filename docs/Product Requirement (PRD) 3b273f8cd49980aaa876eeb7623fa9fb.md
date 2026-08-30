@@ -807,5 +807,3 @@ The Master Feature List is the source of truth for:
 The PRD provides the product-level context, while the Master Feature List provides the structured feature inventory.
 
 [Master Feature List](Product%20Requirement%20(PRD)/Master%20Feature%20List%203b273f8cd49980e78d8eeb2b2d9b6a8f.csv)
-
-[link](Product%20Requirement%20(PRD)/link%203ca73f8cd4998029834bc79690606b42.md)

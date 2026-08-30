@@ -200,10 +200,27 @@ The authentication system must support:
 The system must support:
 
 - Customer profile
+    - View customer profile
+    - Update customer profile
+    - Update profile photo
 - Address book
+    - View saved addresses
+    - Add address
+    - Edit address
+    - Set default address
 - Wishlist
+    - View wishlist
+    - Add product to wishlist
+    - Remove product from wishlist
 - Order history
+    - View order history
+    - View order detail
+    - Track order
+    - Cancel order
+    - Confirm order received
 - Notification center
+    - View notification center
+    - View notification detail
 
 ### Product
 
@@ -369,19 +386,33 @@ The system should:
 # Data Requirements
 
 Users
+
 Sessions
+
 Brands
+
 Suppliers
+
 Categories
+
 Products
+
 Inventory
+
 Cart
+
 Orders
+
 Payments
+
 Shipping
+
 Promotions
+
 Notifications
+
 Reports
+
 System Activities
 
 ## External System & Integration Requirements
@@ -461,6 +492,16 @@ Ruma shall follow these core rules:
 
 - Protected administrative operations must require appropriate authorization.
 
+### Customer
+
+- Customers may only access resources associated with their own account.
+- Customer profile updates must only modify editable customer information.
+- Customer addresses must belong to the customer who manages them.
+- A customer may have at most one default shipping address.
+- Wishlist items must belong to the customer who owns the wishlist.
+- Customer order access must be restricted to orders belonging to the customer.
+- Customer notification access must be restricted to notifications belonging to the customer.
+
 # System Constraints
 
 The MVP has the following constraints:
@@ -477,6 +518,8 @@ The MVP has the following constraints:
 - External payment and shipping capabilities depend on third-party service availability.
 
 # Traceability
+
+### Auth Example:
 
 Requirements must remain traceable across documentation.
 
@@ -511,6 +554,26 @@ POST /auth/change-password
 Functional Testing
 
 This is especially important because **AUTH is already implemented**, while the remaining modules will be implemented incrementally.
+
+### **Customer Example:**
+
+CUST-001 Customer Profile
+
+↓
+
+FR-CUST-001 View Customer Profile
+
+↓
+
+Customer profile service
+
+↓
+
+GET /customer/profile
+
+↓
+
+Functional Testing
 
 # Acceptance & Verification
 

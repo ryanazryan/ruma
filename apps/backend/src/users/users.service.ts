@@ -16,6 +16,17 @@ export class UsersService {
     });
   }
 
+  updateFullName(userId: string, fullName: string): Promise<User> {
+    return this.prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        fullName,
+      },
+    });
+  }
+
   create(
     data: Pick<Prisma.UserCreateInput, 'fullName' | 'email' | 'passwordHash'>,
   ): Promise<User> {
@@ -27,4 +38,20 @@ export class UsersService {
       },
     });
   }
+
+  updateProfilePhoto(
+  userId: string,
+  profilePhotoUrl: string,
+  profilePhotoPublicId: string,
+): Promise<User> {
+  return this.prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      profilePhotoUrl,
+      profilePhotoPublicId,
+    },
+  });
+}
 }

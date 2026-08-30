@@ -94,13 +94,13 @@ Sensitive values such as passwords and credential hashes must use appropriate se
 
 The currently implemented database schema contains:
 
-```
 Users
 Sessions
 Verification Tokens
-```
 
-These entities support the implemented Authentication module.
+These entities currently support the implemented Authentication module.
+
+Customer-related entities will be introduced incrementally as the Customer module is implemented.
 
 Future entities will be introduced incrementally as additional Ruma modules are implemented.
 
@@ -194,6 +194,32 @@ The `verification_tokens` table stores temporary verification and password-reset
 EMAIL_VERIFICATION
 PASSWORD_RESET
 ```
+
+# Customer Profile
+
+The Customer Profile domain stores customer-specific profile information associated with an authenticated user account.
+
+The current Customer Profile implementation is based on the existing `users` entity for account identity information. Additional customer-specific attributes will be introduced only when required by the approved Customer requirements.
+
+## Initial Customer Profile Scope
+
+The Customer Profile feature supports:
+
+- Viewing customer profile information
+- Updating editable customer profile information
+- Managing customer profile photo
+
+## Data Ownership
+
+- Each customer profile belongs to exactly one user account.
+- Customer profile data must be accessed using the authenticated user's identity.
+- A customer must not be able to access or modify another customer's profile data.
+
+## Profile Photo
+
+Profile photo storage requires a media reference associated with the customer account.
+
+The final persistence strategy for the profile photo will be defined during implementation based on the selected Cloudinary integration approach.
 
 # Index Strategy
 
@@ -356,6 +382,15 @@ Review
 Notification
 ```
 
+Additional customer entities may include:
+
+- Customer Profile
+- Customer Address
+- Wishlist Item
+
+Additional commerce entities will be introduced as their modules are implemented:
+...
+
 # Current Database Status
 
 | Area | Status |
@@ -363,6 +398,9 @@ Notification
 | **Users** | ✅ Implemented |
 | **Sessions** | ✅ Implemented |
 | **Verification Tokens** | ✅ Implemented |
+| **Customer Profile** | ⏳ Planned |
+| **Customer Address** | ⏳ Planned |
+| **Wishlist** | ⏳ Planned |
 | **Product Catalog** | ⏳ Planned |
 | **Inventory** | ⏳ Planned |
 | **Shopping Cart** | ⏳ Planned |

@@ -13,3 +13,20 @@ FR-AUTH-011,AUTH-004,AUTH,Generate Password Reset Token,System,Must Have,Impleme
 FR-AUTH-012,AUTH-005,AUTH,Reset Password,User,Must Have,Implemented,MVP,
 FR-AUTH-013,AUTH-006,AUTH,Refresh Access Token,System,Must Have,Implemented,MVP,
 FR-AUTH-014,AUTH-007,AUTH,Change Password,User,Should Have,Implemented,MVP,
+FR-CUST-001,CUST-001,CUST,View Customer Profile,User,Must Have,Review,MVP,Customers can view their own profile information.
+FR-CUST-002,CUST-001,CUST,Update Customer Profile,User,Must Have,Review,MVP,Customers can update editable profile information.
+FR-CUST-003,CUST-001,CUST,Update Profile Photo,User,Should Have,Review,MVP,Customers can upload or replace their profile photo.
+FR-CUST-004,CUST-002,CUST,View Saved Addresses,User,Must Have,Draft,MVP,
+FR-CUST-005,CUST-002,CUST,Add Address,User,Must Have,Draft,MVP,
+FR-CUST-006,CUST-002,CUST,Edit Address,User,Must Have,Draft,MVP,
+FR-CUST-007,CUST-002,CUST,Set Default Address,User,Must Have,Draft,MVP,
+FR-CUST-008,CUST-003,CUST,View Wishlist,User,Must Have,Draft,MVP,
+FR-CUST-009,CUST-003,CUST,Add Product to Wishlist,User,Must Have,Draft,MVP,
+FR-CUST-010,CUST-003,CUST,Remove Product from Wishlist,User,Must Have,Draft,MVP,
+FR-CUST-011,CUST-004,CUST,View Order History,User,Must Have,Draft,MVP,
+FR-CUST-012,CUST-004,CUST,View Order Detail,User,Must Have,Draft,MVP,
+FR-CUST-013,CUST-004,CUST,Track Order,User,Must Have,Draft,MVP,
+FR-CUST-014,CUST-004,CUST,Cancel Order,User,Must Have,Draft,MVP,
+FR-CUST-015,CUST-004,CUST,Confirm Order Received,User,Must Have,Draft,MVP,
+FR-CUST-016,CUST-005,CUST,View Notification Center,User,Must Have,Draft,MVP,
+FR-CUST-017,CUST-005,CUST,View Notification Detail,User,Must Have,Draft,MVP,
