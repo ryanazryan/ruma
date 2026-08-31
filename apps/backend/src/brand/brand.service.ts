@@ -135,4 +135,29 @@ export class BrandService {
       },
     });
   }
+
+  async updateBrandStatus(brandId: string, status: BrandStatus) {
+    const brand = await this.prisma.brand.findUnique({
+      where: {
+        id: brandId,
+      },
+    });
+
+    if (!brand) {
+      throw new NotFoundException('Brand not found.');
+    }
+
+    if (brand.status === status) {
+      return brand;
+    }
+
+    return this.prisma.brand.update({
+      where: {
+        id: brandId,
+      },
+      data: {
+        status,
+      },
+    });
+  }
 }

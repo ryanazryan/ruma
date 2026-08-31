@@ -14,6 +14,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { BrandService } from './brand.service';
 import { UpdateBrandDto } from './dto/update-brand.dto';
+import { UpdateBrandStatusDto } from './dto/update-brand-status.dto';
 
 @Controller('brands')
 export class BrandController {
@@ -72,6 +73,27 @@ export class BrandController {
     return {
       success: true,
       message: 'Brand updated successfully.',
+      data: {
+        brand,
+      },
+    };
+  }
+
+  @Patch(':brandId/status')
+  @UseGuards(SessionAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async updateBrandStatus(
+    @Param('brandId') brandId: string,
+    @Body() dto: UpdateBrandStatusDto,
+  ) {
+    const brand = await this.brandService.updateBrandStatus(
+      brandId,
+      dto.status,
+    );
+
+    return {
+      success: true,
+      message: 'Brand status updated successfully.',
       data: {
         brand,
       },
