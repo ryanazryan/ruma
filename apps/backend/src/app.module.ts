@@ -9,6 +9,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { cloudinaryConfig } from './config/cloudinary.config';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { ProductModule } from './product/product.module';
+import { BrandModule } from './brand/brand.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { ProductModule } from './product/product.module';
     CustomerModule,
     CloudinaryModule,
     ProductModule,
+    BrandModule
   ],
   providers: [
     {

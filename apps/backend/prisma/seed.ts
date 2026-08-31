@@ -3,6 +3,10 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
+  // --------------------------------------------------
+  // Brands
+  // --------------------------------------------------
+
   const moorlife = await prisma.brand.upsert({
     where: {
       slug: 'moorlife',
@@ -25,6 +29,10 @@ async function main() {
     },
   });
 
+  // --------------------------------------------------
+  // Suppliers
+  // --------------------------------------------------
+
   const supplier = await prisma.supplier.upsert({
     where: {
       slug: 'moorlife-supplier',
@@ -35,6 +43,10 @@ async function main() {
       slug: 'moorlife-supplier',
     },
   });
+
+  // --------------------------------------------------
+  // Categories
+  // --------------------------------------------------
 
   const kitchen = await prisma.category.upsert({
     where: {
@@ -58,124 +70,9 @@ async function main() {
     },
   });
 
-  const reviewUsers = await Promise.all([
-    prisma.user.upsert({
-      where: {
-        email: 'review-a@ruma.test',
-      },
-      update: {},
-      create: {
-        fullName: 'Review Customer A',
-        email: 'review-a@ruma.test',
-        passwordHash:
-          '$2b$10$7EqJtq98hPqEX7fNZaFWoOeFQf8f0f4lH5Vh3a5cXx0XfF7L7j7yS',
-        role: 'CUSTOMER',
-        accountStatus: 'ACTIVE',
-      },
-    }),
-    prisma.user.upsert({
-      where: {
-        email: 'review-b@ruma.test',
-      },
-      update: {},
-      create: {
-        fullName: 'Review Customer B',
-        email: 'review-b@ruma.test',
-        passwordHash:
-          '$2b$10$7EqJtq98hPqEX7fNZaFWoOeFQf8f0f4lH5Vh3a5cXx0XfF7L7j7yS',
-        role: 'CUSTOMER',
-        accountStatus: 'ACTIVE',
-      },
-    }),
-    prisma.user.upsert({
-      where: {
-        email: 'review-c@ruma.test',
-      },
-      update: {},
-      create: {
-        fullName: 'Review Customer C',
-        email: 'review-c@ruma.test',
-        passwordHash:
-          '$2b$10$7EqJtq98hPqEX7fNZaFWoOeFQf8f0f4lH5Vh3a5cXx0XfF7L7j7yS',
-        role: 'CUSTOMER',
-        accountStatus: 'ACTIVE',
-      },
-    }),
-    prisma.user.upsert({
-      where: {
-        email: 'review-d@ruma.test',
-      },
-      update: {},
-      create: {
-        fullName: 'Review Customer D',
-        email: 'review-d@ruma.test',
-        passwordHash:
-          '$2b$10$7EqJtq98hPqEX7fNZaFWoOeFQf8f0f4lH5Vh3a5cXx0XfF7L7j7yS',
-        role: 'CUSTOMER',
-        accountStatus: 'ACTIVE',
-      },
-    }),
-  ]);
-
-  const exampleProduct = await prisma.product.findUniqueOrThrow({
-    where: {
-      slug: 'moorlife-example-product',
-    },
-  });
-
-    const reviewData = [
-    {
-      productId: exampleProduct.id,
-      userId: reviewUsers[0].id,
-      rating: 5,
-      reviewText: 'Produknya bagus dan sesuai deskripsi.',
-    },
-    {
-      productId: exampleProduct.id,
-      userId: reviewUsers[1].id,
-      rating: 4,
-      reviewText: 'Kualitas bagus, pengiriman juga aman.',
-    },
-    {
-      productId: exampleProduct.id,
-      userId: reviewUsers[2].id,
-      rating: 5,
-      reviewText: 'Sangat puas dengan produknya.',
-    },
-    {
-      productId: exampleProduct.id,
-      userId: reviewUsers[3].id,
-      rating: 3,
-      reviewText: 'Produknya cukup baik, tetapi masih bisa ditingkatkan.',
-    },
-  ];
-
-  for (const review of reviewData) {
-    const existingReview = await prisma.productReview.findFirst({
-      where: {
-        productId: review.productId,
-        userId: review.userId,
-      },
-    });
-
-    if (existingReview) {
-      await prisma.productReview.update({
-        where: {
-          id: existingReview.id,
-        },
-        data: {
-          rating: review.rating,
-          reviewText: review.reviewText,
-        },
-      });
-    } else {
-      await prisma.productReview.create({
-        data: review,
-      });
-    }
-  }
-
-  console.log('Product review seed completed.');
+  // --------------------------------------------------
+  // Products
+  // --------------------------------------------------
 
   await prisma.product.upsert({
     where: {
@@ -253,6 +150,161 @@ async function main() {
   });
 
   console.log('Product seed completed.');
+
+  // --------------------------------------------------
+  // Review Users
+  // --------------------------------------------------
+
+  const reviewUsers = await Promise.all([
+    prisma.user.upsert({
+      where: {
+        email: 'review-a@ruma.test',
+      },
+      update: {},
+      create: {
+        fullName: 'Review Customer A',
+        email: 'review-a@ruma.test',
+        passwordHash:
+          '$2b$10$7EqJtq98hPqEX7fNZaFWoOeFQf8f0f4lH5Vh3a5cXx0XfF7L7j7yS',
+        role: 'CUSTOMER',
+        accountStatus: 'ACTIVE',
+      },
+    }),
+
+    prisma.user.upsert({
+      where: {
+        email: 'review-b@ruma.test',
+      },
+      update: {},
+      create: {
+        fullName: 'Review Customer B',
+        email: 'review-b@ruma.test',
+        passwordHash:
+          '$2b$10$7EqJtq98hPqEX7fNZaFWoOeFQf8f0f4lH5Vh3a5cXx0XfF7L7j7yS',
+        role: 'CUSTOMER',
+        accountStatus: 'ACTIVE',
+      },
+    }),
+
+    prisma.user.upsert({
+      where: {
+        email: 'review-c@ruma.test',
+      },
+      update: {},
+      create: {
+        fullName: 'Review Customer C',
+        email: 'review-c@ruma.test',
+        passwordHash:
+          '$2b$10$7EqJtq98hPqEX7fNZaFWoOeFQf8f0f4lH5Vh3a5cXx0XfF7L7j7yS',
+        role: 'CUSTOMER',
+        accountStatus: 'ACTIVE',
+      },
+    }),
+
+    prisma.user.upsert({
+      where: {
+        email: 'review-d@ruma.test',
+      },
+      update: {},
+      create: {
+        fullName: 'Review Customer D',
+        email: 'review-d@ruma.test',
+        passwordHash:
+          '$2b$10$7EqJtq98hPqEX7fNZaFWoOeFQf8f0f4lH5Vh3a5cXx0XfF7L7j7yS',
+        role: 'CUSTOMER',
+        accountStatus: 'ACTIVE',
+      },
+    }),
+  ]);
+
+  // --------------------------------------------------
+  // Admin User
+  // --------------------------------------------------
+
+  const adminPasswordHash = '$argon2id$v=19$m=65536,p=4,t=3$bm0wY24iysbUpc4iH7yhdw$smep5cE97TEdimKd9LzzdZNMS0BFnlC5+LDn9IZRZw8';
+
+  await prisma.user.upsert({
+    where: {
+      email: 'admin@ruma.test',
+    },
+    update: {
+      role: 'ADMIN',
+      accountStatus: 'ACTIVE',
+      passwordHash: adminPasswordHash,
+    },
+    create: {
+      fullName: 'Ruma Admin',
+      email: 'admin@ruma.test',
+      passwordHash: adminPasswordHash,
+      role: 'ADMIN',
+      accountStatus: 'ACTIVE',
+    },
+  });
+
+  // --------------------------------------------------
+  // Product Reviews
+  // --------------------------------------------------
+
+  const exampleProduct = await prisma.product.findUniqueOrThrow({
+    where: {
+      slug: 'moorlife-example-product',
+    },
+  });
+
+  const reviewData = [
+    {
+      productId: exampleProduct.id,
+      userId: reviewUsers[0].id,
+      rating: 5,
+      reviewText: 'Produknya bagus dan sesuai deskripsi.',
+    },
+    {
+      productId: exampleProduct.id,
+      userId: reviewUsers[1].id,
+      rating: 4,
+      reviewText: 'Kualitas bagus, pengiriman juga aman.',
+    },
+    {
+      productId: exampleProduct.id,
+      userId: reviewUsers[2].id,
+      rating: 5,
+      reviewText: 'Sangat puas dengan produknya.',
+    },
+    {
+      productId: exampleProduct.id,
+      userId: reviewUsers[3].id,
+      rating: 3,
+      reviewText: 'Produknya cukup baik, tetapi masih bisa ditingkatkan.',
+    },
+  ];
+
+  for (const review of reviewData) {
+    const existingReview = await prisma.productReview.findFirst({
+      where: {
+        productId: review.productId,
+        userId: review.userId,
+      },
+    });
+
+    if (existingReview) {
+      await prisma.productReview.update({
+        where: {
+          id: existingReview.id,
+        },
+        data: {
+          rating: review.rating,
+          reviewText: review.reviewText,
+        },
+      });
+    } else {
+      await prisma.productReview.create({
+        data: review,
+      });
+    }
+  }
+
+  console.log('Product review seed completed.');
+  console.log('Admin user seed completed.');
 }
 
 main()
