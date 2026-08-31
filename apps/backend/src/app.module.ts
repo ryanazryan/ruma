@@ -8,6 +8,7 @@ import { RATE_LIMIT_WINDOW_MS } from './config/rate-limit.config';
 import { PrismaModule } from './prisma/prisma.module';
 import { cloudinaryConfig } from './config/cloudinary.config';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { ProductModule } from './product/product.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
     AuthModule,
     CustomerModule,
     CloudinaryModule,
+    ProductModule,
   ],
   providers: [
     {

@@ -23,5 +23,12 @@
     "strictBindCallApply": true,
     "noFallthroughCasesInSwitch": true,
     "types": ["node", "multer"]
-  }
+  },
+  "exclude": [
+  "node_modules",
+  "dist",
+  "prisma",
+  "test",
+  "**/*spec.ts"
+]
 }
