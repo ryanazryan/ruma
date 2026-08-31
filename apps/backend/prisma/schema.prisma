@@ -9,6 +9,12 @@ datasource db {
 
 enum UserRole {
   CUSTOMER
+  ADMIN
+}
+
+enum BrandStatus {
+  ACTIVE
+  INACTIVE
 }
 
 enum AccountStatus {
@@ -107,15 +113,17 @@ model Session {
 }
 
 model Brand {
-  id        String   @id @default(uuid()) @db.Uuid
-  name      String   @db.VarChar(100)
-  slug      String   @unique @db.VarChar(120)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id        String      @id @default(uuid()) @db.Uuid
+  name      String      @db.VarChar(100)
+  slug      String      @unique @db.VarChar(120)
+  status    BrandStatus @default(ACTIVE)
+  createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   products Product[]
 
   @@index([name], map: "idx_brands_name")
+  @@index([status], map: "idx_brands_status")
   @@map("brands")
 }
 
