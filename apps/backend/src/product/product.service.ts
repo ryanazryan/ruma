@@ -329,4 +329,72 @@ export class ProductService {
       ratingDistribution,
     };
   }
+
+  async getRelatedProducts(productId: string) {
+    const product = await this.prisma.product.findUnique({
+      where: {
+        id: productId,
+      },
+      select: {
+        id: true,
+        brandId: true,
+        categoryId: true,
+      },
+    });
+
+    if (!product) {
+      throw new NotFoundException('Product not found.');
+    }
+
+    const candidates = await this.prisma.product.findMany({
+      where: {
+        id: {
+          not: productId,
+        },
+        OR: [
+          {
+            categoryId: product.categoryId,
+          },
+          {
+            brandId: product.brandId,
+          },
+        ],
+      },
+      include: {
+        brand: true,
+        supplier: true,
+        category: true,
+      },
+    });
+
+    const rankedProducts = candidates
+      .map((candidate) => {
+        let score = 0;
+
+        if (candidate.categoryId === product.categoryId) {
+          score += 2;
+        }
+
+        if (candidate.brandId === product.brandId) {
+          score += 1;
+        }
+
+        return {
+          candidate,
+          score,
+        };
+      })
+      .sort((a, b) => {
+        if (b.score !== a.score) {
+          return b.score - a.score;
+        }
+
+        return (
+          b.candidate.createdAt.getTime() - a.candidate.createdAt.getTime()
+        );
+      })
+      .slice(0, 8);
+
+    return rankedProducts.map(({ candidate }) => candidate);
+  }
 }
