@@ -238,4 +238,95 @@ export class ProductService {
       },
     });
   }
+
+  async getProductReviews(productId: string) {
+    const product = await this.prisma.product.findUnique({
+      where: {
+        id: productId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!product) {
+      throw new NotFoundException('Product not found.');
+    }
+
+    return this.prisma.productReview.findMany({
+      where: {
+        productId,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  async getProductRating(productId: string) {
+    const product = await this.prisma.product.findUnique({
+      where: {
+        id: productId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!product) {
+      throw new NotFoundException('Product not found.');
+    }
+
+    const aggregate = await this.prisma.productReview.aggregate({
+      where: {
+        productId,
+      },
+      _avg: {
+        rating: true,
+      },
+      _count: {
+        rating: true,
+      },
+    });
+
+    const distribution = await this.prisma.productReview.groupBy({
+      by: ['rating'],
+      where: {
+        productId,
+      },
+      _count: {
+        rating: true,
+      },
+      orderBy: {
+        rating: 'desc',
+      },
+    });
+
+    const ratingDistribution = {
+      5: 0,
+      4: 0,
+      3: 0,
+      2: 0,
+      1: 0,
+    };
+
+    for (const item of distribution) {
+      ratingDistribution[item.rating as keyof typeof ratingDistribution] =
+        item._count.rating;
+    }
+
+    return {
+      averageRating: aggregate._avg.rating ?? null,
+      totalReviews: aggregate._count.rating,
+      ratingDistribution,
+    };
+  }
 }

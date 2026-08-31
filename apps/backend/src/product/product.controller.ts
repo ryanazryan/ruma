@@ -8,8 +8,9 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
-import { ProductService } from './product.service';
 import { FileInterceptor } from '@nestjs/platform-express';
+
+import { ProductService } from './product.service';
 
 @Controller('products')
 export class ProductController {
@@ -150,6 +151,19 @@ export class ProductController {
     };
   }
 
+  @Get(':productId/reviews')
+  async getProductReviews(@Param('productId') productId: string) {
+    const reviews = await this.productService.getProductReviews(productId);
+
+    return {
+      success: true,
+      message: 'Product reviews retrieved successfully.',
+      data: {
+        reviews,
+      },
+    };
+  }
+
   @Get(':productId/media')
   async getProductMedia(@Param('productId') productId: string) {
     const media = await this.productService.getProductMedia(productId);
@@ -159,6 +173,19 @@ export class ProductController {
       message: 'Product media retrieved successfully.',
       data: {
         media,
+      },
+    };
+  }
+
+  @Get(':productId/rating')
+  async getProductRating(@Param('productId') productId: string) {
+    const rating = await this.productService.getProductRating(productId);
+
+    return {
+      success: true,
+      message: 'Product rating retrieved successfully.',
+      data: {
+        rating,
       },
     };
   }
