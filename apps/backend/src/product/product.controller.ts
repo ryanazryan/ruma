@@ -190,6 +190,19 @@ export class ProductController {
     };
   }
 
+  @Get(':productId/related')
+  async getRelatedProducts(@Param('productId') productId: string) {
+    const products = await this.productService.getRelatedProducts(productId);
+
+    return {
+      success: true,
+      message: 'Related products retrieved successfully.',
+      data: {
+        products,
+      },
+    };
+  }
+
   @Get(':productId')
   async getProductById(@Param('productId') productId: string) {
     const product = await this.productService.getProductById(productId);
