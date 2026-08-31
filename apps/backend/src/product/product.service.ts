@@ -1,9 +1,18 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Injectable()
 export class ProductService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cloudinary: CloudinaryService,
+  ) {}
 
   async getProducts() {
     return this.prisma.product.findMany({
@@ -27,6 +36,11 @@ export class ProductService {
         brand: true,
         supplier: true,
         category: true,
+        media: {
+          orderBy: {
+            sortOrder: 'asc',
+          },
+        },
       },
     });
 
@@ -145,6 +159,83 @@ export class ProductService {
         category: true,
       },
       orderBy,
+    });
+  }
+
+  async uploadProductMedia(productId: string, file: Buffer, mimeType: string) {
+    const product = await this.prisma.product.findUnique({
+      where: {
+        id: productId,
+      },
+    });
+
+    if (!product) {
+      throw new NotFoundException('Product not found.');
+    }
+
+    if (!mimeType.startsWith('image/')) {
+      throw new BadRequestException('Only image files are supported.');
+    }
+
+    const lastMedia = await this.prisma.productMedia.aggregate({
+      where: {
+        productId,
+      },
+      _max: {
+        sortOrder: true,
+      },
+    });
+
+    const sortOrder = (lastMedia._max.sortOrder ?? -1) + 1;
+
+    const uploadedImage = await this.cloudinary.uploadImage(
+      file,
+      `ruma/products/${productId}`,
+    );
+
+    try {
+      const media = await this.prisma.productMedia.create({
+        data: {
+          productId,
+          url: uploadedImage.secure_url,
+          publicId: uploadedImage.public_id,
+          sortOrder,
+        },
+      });
+
+      return media;
+    } catch (error) {
+      await this.cloudinary.deleteImage(uploadedImage.public_id);
+
+      if (error instanceof Error) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException('Unable to save product media.');
+    }
+  }
+
+  async getProductMedia(productId: string) {
+    const product = await this.prisma.product.findUnique({
+      where: {
+        id: productId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!product) {
+      throw new NotFoundException('Product not found.');
+    }
+
+    return this.prisma.productMedia.findMany({
+      where: {
+        productId,
+      },
+      orderBy: {
+        sortOrder: 'asc',
+      },
     });
   }
 }
