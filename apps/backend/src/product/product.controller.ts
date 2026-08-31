@@ -1,11 +1,15 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Param,
+  Post,
   Query,
-  BadRequestException,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ProductService } from './product.service';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('products')
 export class ProductController {
@@ -107,6 +111,54 @@ export class ProductController {
       message: 'Products sorted successfully.',
       data: {
         products,
+      },
+    };
+  }
+
+  @Post(':productId/media')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 5 * 1024 * 1024,
+      },
+    }),
+  )
+  async uploadProductMedia(
+    @Param('productId') productId: string,
+    @UploadedFile()
+    file: {
+      buffer: Buffer;
+      mimetype: string;
+    },
+  ) {
+    if (!file) {
+      throw new BadRequestException('Product image is required.');
+    }
+
+    const media = await this.productService.uploadProductMedia(
+      productId,
+      file.buffer,
+      file.mimetype,
+    );
+
+    return {
+      success: true,
+      message: 'Product media uploaded successfully.',
+      data: {
+        media,
+      },
+    };
+  }
+
+  @Get(':productId/media')
+  async getProductMedia(@Param('productId') productId: string) {
+    const media = await this.productService.getProductMedia(productId);
+
+    return {
+      success: true,
+      message: 'Product media retrieved successfully.',
+      data: {
+        media,
       },
     };
   }
