@@ -291,6 +291,46 @@ async function main() {
   });
 
   // --------------------------------------------------
+  // Notification Test Fixtures
+  // --------------------------------------------------
+
+  await prisma.notification.deleteMany({
+    where: {
+      userId: {
+        in: [orderCustomerA.id, orderCustomerB.id],
+      },
+    },
+  });
+
+  await prisma.notification.createMany({
+    data: [
+      {
+        userId: orderCustomerA.id,
+        type: 'ACCOUNT',
+        title: 'Welcome to Ruma',
+        message: 'Your Ruma account is ready to use.',
+        isRead: false,
+      },
+      {
+        userId: orderCustomerA.id,
+        type: 'ORDER',
+        title: 'Order Delivered',
+        message: 'Your order RUMA-ORDER-002 has been delivered.',
+        isRead: true,
+      },
+      {
+        userId: orderCustomerB.id,
+        type: 'PAYMENT',
+        title: 'Payment Successful',
+        message: 'Payment for order RUMA-ORDER-003 was successful.',
+        isRead: false,
+      },
+    ],
+  });
+
+  console.log('Notification test fixture seed completed.');
+
+  // --------------------------------------------------
   // Product Reviews
   // --------------------------------------------------
 

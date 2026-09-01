@@ -299,45 +299,83 @@ export class CustomerService {
   }
 
   async setDefaultAddress(userId: string, addressId: string) {
-  const user = await this.users.findById(userId);
+    const user = await this.users.findById(userId);
 
-  if (!user) {
-    throw new NotFoundException('Customer account not found.');
-  }
+    if (!user) {
+      throw new NotFoundException('Customer account not found.');
+    }
 
-  const address = await this.prisma.customerAddress.findFirst({
-    where: {
-      id: addressId,
-      userId,
-    },
-  });
-
-  if (!address) {
-    throw new NotFoundException('Customer address not found.');
-  }
-
-  return this.prisma.$transaction(async (tx) => {
-    await tx.customerAddress.updateMany({
-      where: {
-        userId,
-        isDefault: true,
-        id: {
-          not: addressId,
-        },
-      },
-      data: {
-        isDefault: false,
-      },
-    });
-
-    return tx.customerAddress.update({
+    const address = await this.prisma.customerAddress.findFirst({
       where: {
         id: addressId,
-      },
-      data: {
-        isDefault: true,
+        userId,
       },
     });
-  });
-}
+
+    if (!address) {
+      throw new NotFoundException('Customer address not found.');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.customerAddress.updateMany({
+        where: {
+          userId,
+          isDefault: true,
+          id: {
+            not: addressId,
+          },
+        },
+        data: {
+          isDefault: false,
+        },
+      });
+
+      return tx.customerAddress.update({
+        where: {
+          id: addressId,
+        },
+        data: {
+          isDefault: true,
+        },
+      });
+    });
+  }
+
+  async getNotifications(userId: string) {
+    const user = await this.users.findById(userId);
+
+    if (!user) {
+      throw new NotFoundException('Customer account not found.');
+    }
+
+    return this.prisma.notification.findMany({
+      where: {
+        userId,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  async getNotificationById(userId: string, notificationId: string) {
+    const user = await this.users.findById(userId);
+
+    if (!user) {
+      throw new NotFoundException('Customer account not found.');
+    }
+
+    const notification = await this.prisma.notification.findFirst({
+      where: {
+        id: notificationId,
+        userId,
+      },
+    });
+
+    if (!notification) {
+      throw new NotFoundException('Notification not found.');
+    }
+
+    return notification;
+  }
 }

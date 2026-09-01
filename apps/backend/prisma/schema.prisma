@@ -43,6 +43,12 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum NotificationType {
+  ACCOUNT
+  ORDER
+  PAYMENT
+}
+
 model User {
   id                   String        @id @default(uuid()) @db.Uuid
   fullName             String        @map("full_name") @db.VarChar(100)
@@ -64,6 +70,7 @@ model User {
   productReviews     ProductReview[]
   wishlistItems      WishlistItem[]
   orders             Order[]
+  notifications      Notification[]
 
   @@index([role], map: "idx_users_role")
   @@index([accountStatus], map: "idx_users_account_status")
@@ -297,4 +304,22 @@ model OrderItem {
   @@index([orderId], map: "idx_order_items_order_id")
   @@index([productId], map: "idx_order_items_product_id")
   @@map("order_items")
+}
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  type      NotificationType
+  title     String           @db.VarChar(150)
+  message   String           @db.Text
+  isRead    Boolean          @default(false) @map("is_read")
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "idx_notifications_user_id")
+  @@index([userId, createdAt], map: "idx_notifications_user_created")
+  @@index([userId, isRead], map: "idx_notifications_user_read")
+  @@map("notifications")
 }
