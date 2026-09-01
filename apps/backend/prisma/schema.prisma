@@ -51,6 +51,7 @@ model User {
   sessions           Session[]
   customerAddresses CustomerAddress[]
   productReviews ProductReview[]
+  wishlistItems  WishlistItem[]
 
   @@index([role], map: "idx_users_role")
   @@index([accountStatus], map: "idx_users_account_status")
@@ -180,8 +181,10 @@ model Product {
   brand       Brand    @relation(fields: [brandId], references: [id])
   supplier    Supplier @relation(fields: [supplierId], references: [id])
   category    Category @relation(fields: [categoryId], references: [id])
+
   media ProductMedia[]
   reviews ProductReview[]
+  wishlistItems WishlistItem[]
 
   @@index([brandId], map: "idx_products_brand_id")
   @@index([supplierId], map: "idx_products_supplier_id")
@@ -222,4 +225,19 @@ model ProductReview {
   @@index([userId], map: "idx_product_reviews_user_id")
   @@index([productId, createdAt], map: "idx_product_reviews_product_created")
   @@map("product_reviews")
+}
+
+model WishlistItem {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  productId String   @map("product_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user    User    @relation(fields: [userId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@unique([userId, productId], map: "uq_wishlist_items_user_product")
+  @@index([userId], map: "idx_wishlist_items_user_id")
+  @@index([productId], map: "idx_wishlist_items_product_id")
+  @@map("wishlist_items")
 }
