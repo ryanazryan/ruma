@@ -159,4 +159,40 @@ export class CustomerController {
       },
     };
   }
+
+  @Get('notifications')
+  @UseGuards(SessionAuthGuard)
+  async getNotifications(@Req() request: AuthenticatedRequest) {
+    const notifications = await this.customerService.getNotifications(
+      request.userId,
+    );
+
+    return {
+      success: true,
+      message: 'Customer notifications retrieved successfully.',
+      data: {
+        notifications,
+      },
+    };
+  }
+
+  @Get('notifications/:notificationId')
+  @UseGuards(SessionAuthGuard)
+  async getNotificationById(
+    @Req() request: AuthenticatedRequest,
+    @Param('notificationId') notificationId: string,
+  ) {
+    const notification = await this.customerService.getNotificationById(
+      request.userId,
+      notificationId,
+    );
+
+    return {
+      success: true,
+      message: 'Customer notification retrieved successfully.',
+      data: {
+        notification,
+      },
+    };
+  }
 }
