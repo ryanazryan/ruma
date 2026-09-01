@@ -11,6 +11,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { ProductModule } from './product/product.module';
 import { BrandModule } from './brand/brand.module';
 import { SupplierModule } from './supplier/supplier.module';
+import { WishlistModule } from './wishlist/wishlist.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { SupplierModule } from './supplier/supplier.module';
     ProductModule,
     BrandModule,
     SupplierModule,
+    WishlistModule,
   ],
   providers: [
     {

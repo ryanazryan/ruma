@@ -221,7 +221,10 @@ async function main() {
   // Admin User
   // --------------------------------------------------
 
-  const adminPasswordHash = '$argon2id$v=19$m=65536,p=4,t=3$bm0wY24iysbUpc4iH7yhdw$smep5cE97TEdimKd9LzzdZNMS0BFnlC5+LDn9IZRZw8';
+  const adminPasswordHash =
+    '$argon2id$v=19$m=65536,p=4,t=3$bm0wY24iysbUpc4iH7yhdw$smep5cE97TEdimKd9LzzdZNMS0BFnlC5+LDn9IZRZw8';
+  const customerBPasswordHash =
+    '$argon2id$v=19$m=65536,p=4,t=3$FepD2zAP1boL0jrBhHiCBg$qSAU3l1gAofXeAgLraIMSfKt54R674jVIS3w2ByC7Hw';
 
   await prisma.user.upsert({
     where: {
@@ -237,6 +240,20 @@ async function main() {
       email: 'admin@ruma.test',
       passwordHash: adminPasswordHash,
       role: 'ADMIN',
+      accountStatus: 'ACTIVE',
+    },
+  });
+
+  await prisma.user.upsert({
+    where: {
+      email: 'wishlist-b@ruma.test',
+    },
+    update: {},
+    create: {
+      fullName: 'Wishlist Customer B',
+      email: 'wishlist-b@ruma.test',
+      passwordHash: customerBPasswordHash,
+      role: 'CUSTOMER',
       accountStatus: 'ACTIVE',
     },
   });
