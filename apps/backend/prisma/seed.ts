@@ -259,6 +259,38 @@ async function main() {
   });
 
   // --------------------------------------------------
+  // Order Test Users
+  // --------------------------------------------------
+
+  const orderCustomerA = await prisma.user.upsert({
+    where: {
+      email: 'order-a@ruma.test',
+    },
+    update: {},
+    create: {
+      fullName: 'Order Customer A',
+      email: 'order-a@ruma.test',
+      passwordHash: customerBPasswordHash,
+      role: 'CUSTOMER',
+      accountStatus: 'ACTIVE',
+    },
+  });
+
+  const orderCustomerB = await prisma.user.upsert({
+    where: {
+      email: 'order-b@ruma.test',
+    },
+    update: {},
+    create: {
+      fullName: 'Order Customer B',
+      email: 'order-b@ruma.test',
+      passwordHash: customerBPasswordHash,
+      role: 'CUSTOMER',
+      accountStatus: 'ACTIVE',
+    },
+  });
+
+  // --------------------------------------------------
   // Product Reviews
   // --------------------------------------------------
 
@@ -267,6 +299,169 @@ async function main() {
       slug: 'moorlife-example-product',
     },
   });
+
+  const storageProduct = await prisma.product.findUniqueOrThrow({
+    where: {
+      slug: 'moorlife-storage-product',
+    },
+  });
+
+  // --------------------------------------------------
+  // Order Test Fixtures
+  // --------------------------------------------------
+
+  const orderA1 = await prisma.order.upsert({
+    where: {
+      orderNumber: 'RUMA-ORDER-001',
+    },
+    update: {
+      status: 'PROCESSING',
+      totalAmount: 325000,
+      shippingRecipientName: 'Order Customer A',
+      shippingPhone: '081234567890',
+      shippingAddressLine: 'Jl. Contoh No. 1',
+      shippingDistrict: 'Banjarbaru Utara',
+      shippingCity: 'Banjarbaru',
+      shippingProvince: 'Kalimantan Selatan',
+      shippingPostalCode: '70714',
+    },
+    create: {
+      userId: orderCustomerA.id,
+      orderNumber: 'RUMA-ORDER-001',
+      status: 'PROCESSING',
+      totalAmount: 325000,
+      shippingRecipientName: 'Order Customer A',
+      shippingPhone: '081234567890',
+      shippingAddressLine: 'Jl. Contoh No. 1',
+      shippingDistrict: 'Banjarbaru Utara',
+      shippingCity: 'Banjarbaru',
+      shippingProvince: 'Kalimantan Selatan',
+      shippingPostalCode: '70714',
+    },
+  });
+
+  await prisma.orderItem.deleteMany({
+    where: {
+      orderId: orderA1.id,
+    },
+  });
+
+  await prisma.orderItem.createMany({
+    data: [
+      {
+        orderId: orderA1.id,
+        productId: exampleProduct.id,
+        productName: exampleProduct.name,
+        unitPrice: 125000,
+        quantity: 2,
+        subtotal: 250000,
+      },
+      {
+        orderId: orderA1.id,
+        productId: storageProduct.id,
+        productName: storageProduct.name,
+        unitPrice: 75000,
+        quantity: 1,
+        subtotal: 75000,
+      },
+    ],
+  });
+
+  const orderA2 = await prisma.order.upsert({
+    where: {
+      orderNumber: 'RUMA-ORDER-002',
+    },
+    update: {
+      status: 'DELIVERED',
+      totalAmount: 125000,
+      shippingRecipientName: 'Order Customer A',
+      shippingPhone: '081234567890',
+      shippingAddressLine: 'Jl. Contoh No. 1',
+      shippingDistrict: 'Banjarbaru Utara',
+      shippingCity: 'Banjarbaru',
+      shippingProvince: 'Kalimantan Selatan',
+      shippingPostalCode: '70714',
+    },
+    create: {
+      userId: orderCustomerA.id,
+      orderNumber: 'RUMA-ORDER-002',
+      status: 'DELIVERED',
+      totalAmount: 125000,
+      shippingRecipientName: 'Order Customer A',
+      shippingPhone: '081234567890',
+      shippingAddressLine: 'Jl. Contoh No. 1',
+      shippingDistrict: 'Banjarbaru Utara',
+      shippingCity: 'Banjarbaru',
+      shippingProvince: 'Kalimantan Selatan',
+      shippingPostalCode: '70714',
+    },
+  });
+
+  await prisma.orderItem.deleteMany({
+    where: {
+      orderId: orderA2.id,
+    },
+  });
+
+  await prisma.orderItem.create({
+    data: {
+      orderId: orderA2.id,
+      productId: exampleProduct.id,
+      productName: exampleProduct.name,
+      unitPrice: 125000,
+      quantity: 1,
+      subtotal: 125000,
+    },
+  });
+
+  const orderB1 = await prisma.order.upsert({
+    where: {
+      orderNumber: 'RUMA-ORDER-003',
+    },
+    update: {
+      status: 'PAID',
+      totalAmount: 75000,
+      shippingRecipientName: 'Order Customer B',
+      shippingPhone: '081298765432',
+      shippingAddressLine: 'Jl. Contoh No. 2',
+      shippingDistrict: 'Banjarbaru Selatan',
+      shippingCity: 'Banjarbaru',
+      shippingProvince: 'Kalimantan Selatan',
+      shippingPostalCode: '70712',
+    },
+    create: {
+      userId: orderCustomerB.id,
+      orderNumber: 'RUMA-ORDER-003',
+      status: 'PAID',
+      totalAmount: 75000,
+      shippingRecipientName: 'Order Customer B',
+      shippingPhone: '081298765432',
+      shippingAddressLine: 'Jl. Contoh No. 2',
+      shippingDistrict: 'Banjarbaru Selatan',
+      shippingCity: 'Banjarbaru',
+      shippingProvince: 'Kalimantan Selatan',
+      shippingPostalCode: '70712',
+    },
+  });
+
+  await prisma.orderItem.deleteMany({
+    where: {
+      orderId: orderB1.id,
+    },
+  });
+
+  await prisma.orderItem.create({
+    data: {
+      orderId: orderB1.id,
+      productId: storageProduct.id,
+      productName: storageProduct.name,
+      unitPrice: 75000,
+      quantity: 1,
+      subtotal: 75000,
+    },
+  });
+
+  console.log('Order test fixture seed completed.');
 
   const reviewData = [
     {

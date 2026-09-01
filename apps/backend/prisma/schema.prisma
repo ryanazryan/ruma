@@ -32,6 +32,17 @@ enum SupplierStatus {
   INACTIVE
 }
 
+enum OrderStatus {
+  CREATED
+  PENDING_PAYMENT
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  COMPLETED
+  CANCELLED
+}
+
 model User {
   id                   String        @id @default(uuid()) @db.Uuid
   fullName             String        @map("full_name") @db.VarChar(100)
@@ -49,9 +60,10 @@ model User {
 
   verificationTokens VerificationToken[]
   sessions           Session[]
-  customerAddresses CustomerAddress[]
-  productReviews ProductReview[]
-  wishlistItems  WishlistItem[]
+  customerAddresses  CustomerAddress[]
+  productReviews     ProductReview[]
+  wishlistItems      WishlistItem[]
+  orders             Order[]
 
   @@index([role], map: "idx_users_role")
   @@index([accountStatus], map: "idx_users_account_status")
@@ -60,19 +72,19 @@ model User {
 }
 
 model CustomerAddress {
-  id           String   @id @default(uuid()) @db.Uuid
-  userId       String   @map("user_id") @db.Uuid
-  label        String   @db.VarChar(50)
-  recipientName String  @map("recipient_name") @db.VarChar(100)
-  phone        String   @db.VarChar(30)
-  addressLine  String   @map("address_line") @db.Text
-  district     String   @db.VarChar(100)
-  city         String   @db.VarChar(100)
-  province     String   @db.VarChar(100)
-  postalCode   String   @map("postal_code") @db.VarChar(10)
-  isDefault    Boolean  @default(false) @map("is_default")
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  label         String   @db.VarChar(50)
+  recipientName String   @map("recipient_name") @db.VarChar(100)
+  phone         String   @db.VarChar(30)
+  addressLine   String   @map("address_line") @db.Text
+  district      String   @db.VarChar(100)
+  city          String   @db.VarChar(100)
+  province      String   @db.VarChar(100)
+  postalCode    String   @map("postal_code") @db.VarChar(10)
+  isDefault     Boolean  @default(false) @map("is_default")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   user User @relation(fields: [userId], references: [id])
 
@@ -149,16 +161,16 @@ model Supplier {
 }
 
 model Category {
-  id        String     @id @default(uuid()) @db.Uuid
-  name      String     @db.VarChar(100)
-  slug      String     @unique @db.VarChar(120)
-  parentId  String?    @map("parent_id") @db.Uuid
-  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(100)
+  slug      String   @unique @db.VarChar(120)
+  parentId  String?  @map("parent_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children  Category[] @relation("CategoryHierarchy")
-  products  Product[]
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryHierarchy")
+  products Product[]
 
   @@index([parentId], map: "idx_categories_parent_id")
   @@index([name], map: "idx_categories_name")
@@ -178,13 +190,14 @@ model Product {
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  brand       Brand    @relation(fields: [brandId], references: [id])
-  supplier    Supplier @relation(fields: [supplierId], references: [id])
-  category    Category @relation(fields: [categoryId], references: [id])
+  brand    Brand    @relation(fields: [brandId], references: [id])
+  supplier Supplier @relation(fields: [supplierId], references: [id])
+  category Category @relation(fields: [categoryId], references: [id])
 
-  media ProductMedia[]
-  reviews ProductReview[]
+  media         ProductMedia[]
+  reviews       ProductReview[]
   wishlistItems WishlistItem[]
+  orderItems    OrderItem[]
 
   @@index([brandId], map: "idx_products_brand_id")
   @@index([supplierId], map: "idx_products_supplier_id")
@@ -240,4 +253,48 @@ model WishlistItem {
   @@index([userId], map: "idx_wishlist_items_user_id")
   @@index([productId], map: "idx_wishlist_items_product_id")
   @@map("wishlist_items")
+}
+
+model Order {
+  id          String      @id @default(uuid()) @db.Uuid
+  userId      String      @map("user_id") @db.Uuid
+  orderNumber String      @unique @map("order_number") @db.VarChar(30)
+  status      OrderStatus @default(CREATED)
+  totalAmount Int         @map("total_amount")
+
+  shippingRecipientName String @map("shipping_recipient_name") @db.VarChar(100)
+  shippingPhone         String @map("shipping_phone") @db.VarChar(30)
+  shippingAddressLine   String @map("shipping_address_line") @db.Text
+  shippingDistrict      String @map("shipping_district") @db.VarChar(100)
+  shippingCity          String @map("shipping_city") @db.VarChar(100)
+  shippingProvince      String @map("shipping_province") @db.VarChar(100)
+  shippingPostalCode    String @map("shipping_postal_code") @db.VarChar(10)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user  User        @relation(fields: [userId], references: [id])
+  items OrderItem[]
+
+  @@index([userId], map: "idx_orders_user_id")
+  @@index([userId, createdAt], map: "idx_orders_user_created")
+  @@index([status], map: "idx_orders_status")
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String @id @default(uuid()) @db.Uuid
+  orderId     String @map("order_id") @db.Uuid
+  productId   String @map("product_id") @db.Uuid
+  productName String @map("product_name") @db.VarChar(150)
+  unitPrice   Int    @map("unit_price")
+  quantity    Int
+  subtotal    Int
+
+  order   Order   @relation(fields: [orderId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId], map: "idx_order_items_order_id")
+  @@index([productId], map: "idx_order_items_product_id")
+  @@map("order_items")
 }

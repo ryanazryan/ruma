@@ -12,6 +12,7 @@ import { ProductModule } from './product/product.module';
 import { BrandModule } from './brand/brand.module';
 import { SupplierModule } from './supplier/supplier.module';
 import { WishlistModule } from './wishlist/wishlist.module';
+import { OrdersModule } from './orders/orders.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { WishlistModule } from './wishlist/wishlist.module';
     BrandModule,
     SupplierModule,
     WishlistModule,
+    OrdersModule,
   ],
   providers: [
     {
