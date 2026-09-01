@@ -27,6 +27,11 @@ enum VerificationTokenType {
   PASSWORD_RESET
 }
 
+enum SupplierStatus {
+  ACTIVE
+  INACTIVE
+}
+
 model User {
   id                   String        @id @default(uuid()) @db.Uuid
   fullName             String        @map("full_name") @db.VarChar(100)
@@ -128,15 +133,17 @@ model Brand {
 }
 
 model Supplier {
-  id        String   @id @default(uuid()) @db.Uuid
-  name      String   @db.VarChar(100)
-  slug      String   @unique @db.VarChar(120)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id        String         @id @default(uuid()) @db.Uuid
+  name      String         @db.VarChar(100)
+  slug      String         @unique @db.VarChar(120)
+  status    SupplierStatus @default(ACTIVE)
+  createdAt DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   products Product[]
 
   @@index([name], map: "idx_suppliers_name")
+  @@index([status], map: "idx_suppliers_status")
   @@map("suppliers")
 }
 

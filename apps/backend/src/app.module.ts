@@ -10,6 +10,7 @@ import { cloudinaryConfig } from './config/cloudinary.config';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { ProductModule } from './product/product.module';
 import { BrandModule } from './brand/brand.module';
+import { SupplierModule } from './supplier/supplier.module';
 
 @Module({
   imports: [
@@ -29,7 +30,8 @@ import { BrandModule } from './brand/brand.module';
     CustomerModule,
     CloudinaryModule,
     ProductModule,
-    BrandModule
+    BrandModule,
+    SupplierModule,
   ],
   providers: [
     {
