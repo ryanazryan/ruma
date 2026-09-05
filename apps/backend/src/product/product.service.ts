@@ -15,17 +15,22 @@ export class ProductService {
   ) {}
 
   async getProducts() {
-    return this.prisma.product.findMany({
-      include: {
-        brand: true,
-        supplier: true,
-        category: true,
+  return this.prisma.product.findMany({
+    include: {
+      brand: true,
+      supplier: true,
+      category: true,
+      media: {
+        orderBy: {
+          sortOrder: 'asc',
+        },
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-  }
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+}
 
   async getProductById(productId: string) {
     const product = await this.prisma.product.findUnique({
@@ -87,6 +92,11 @@ export class ProductService {
         brand: true,
         supplier: true,
         category: true,
+        media: {
+          orderBy: {
+            sortOrder: 'asc',
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
@@ -141,6 +151,11 @@ export class ProductService {
         brand: true,
         supplier: true,
         category: true,
+        media: {
+          orderBy: {
+            sortOrder: 'asc',
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
@@ -157,6 +172,11 @@ export class ProductService {
         brand: true,
         supplier: true,
         category: true,
+        media: {
+          orderBy: {
+            sortOrder: 'asc',
+          },
+        },
       },
       orderBy,
     });

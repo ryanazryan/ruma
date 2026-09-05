@@ -13,6 +13,7 @@ import { BrandModule } from './brand/brand.module';
 import { SupplierModule } from './supplier/supplier.module';
 import { WishlistModule } from './wishlist/wishlist.module';
 import { OrdersModule } from './orders/orders.module';
+import { PricingModule } from './pricing/pricing.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { OrdersModule } from './orders/orders.module';
     SupplierModule,
     WishlistModule,
     OrdersModule,
+    PricingModule
   ],
   providers: [
     {

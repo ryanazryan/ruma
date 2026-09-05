@@ -250,6 +250,7 @@ export class AuthService {
             fullName: user.fullName,
             email: user.email,
             role: user.role,
+            createdAt: user.createdAt,
           },
         },
       },
@@ -278,7 +279,18 @@ export class AuthService {
   async getCurrentUser(
     userId: string,
   ): Promise<ApiSuccessResponse<LoginResponseData>> {
-    const user = await this.users.findById(userId);
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        role: true,
+        createdAt: true,
+      },
+    });
 
     if (!user) {
       throw new UnauthorizedException('User not found.');
@@ -293,6 +305,7 @@ export class AuthService {
           fullName: user.fullName,
           email: user.email,
           role: user.role,
+          createdAt: user.createdAt,
         },
       },
     };

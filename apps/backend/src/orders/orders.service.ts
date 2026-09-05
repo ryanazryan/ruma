@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { MembershipService } from '../membership/membership.service';
 
 const ORDER_LIFECYCLE = [
   'CREATED',
@@ -18,7 +19,10 @@ const ORDER_LIFECYCLE = [
 
 @Injectable()
 export class OrdersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly membershipService: MembershipService,
+  ) {}
 
   async findMyOrders(userId: string) {
     return this.prisma.order.findMany({
