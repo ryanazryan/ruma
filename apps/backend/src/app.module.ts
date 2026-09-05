@@ -14,6 +14,7 @@ import { SupplierModule } from './supplier/supplier.module';
 import { WishlistModule } from './wishlist/wishlist.module';
 import { OrdersModule } from './orders/orders.module';
 import { PricingModule } from './pricing/pricing.module';
+import { CartModule } from './cart/cart.module';
 
 @Module({
   imports: [
@@ -37,7 +38,8 @@ import { PricingModule } from './pricing/pricing.module';
     SupplierModule,
     WishlistModule,
     OrdersModule,
-    PricingModule
+    PricingModule,
+    CartModule,
   ],
   providers: [
     {

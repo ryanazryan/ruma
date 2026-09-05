@@ -1,8 +1,17 @@
-import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+
+import { UserRole } from '@prisma/client';
 
 import { MembershipService } from './membership.service';
 import { SessionAuthGuard } from '../auth/guards/session-auth.guard';
 import type { AuthenticatedRequest } from '../auth/guards/session-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @Controller('customer/membership')
 export class MembershipController {
@@ -11,7 +20,8 @@ export class MembershipController {
   ) {}
 
   @Get()
-  @UseGuards(SessionAuthGuard)
+  @UseGuards(SessionAuthGuard, RolesGuard)
+  @Roles(UserRole.CUSTOMER)
   async getMyMembership(
     @Req() request: AuthenticatedRequest,
   ) {
