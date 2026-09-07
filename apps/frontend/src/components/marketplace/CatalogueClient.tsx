@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 import type { ApiBrand } from '@/api/brands'
 import {
@@ -81,6 +81,7 @@ export function CatalogueClient({
     brands,
 }: CatalogueClientProps) {
     const router = useRouter()
+    const searchParams = useSearchParams()
 
     const {
         isProductWishlisted,
@@ -104,11 +105,34 @@ export function CatalogueClient({
     const [error, setError] =
         useState<string | null>(null)
 
+    const categoryParam = searchParams.get('category')?.trim().toLowerCase() ?? ''
+    const sortParam = searchParams.get('sort')?.trim().toLowerCase() ?? ''
+
     useEffect(() => {
+        const selectedCategory = categoryParam
+            ? categories.find(
+                (category) =>
+                    category.slug === categoryParam,
+            )
+            : undefined
+
         setProducts(initialProducts)
-        setFilters({})
-        setSort('recommended')
-    }, [initialProducts])
+
+        setFilters({
+            categoryId: selectedCategory?.id,
+        })
+
+        setSort(
+            sortParam === 'newest'
+                ? 'newest'
+                : 'recommended',
+        )
+    }, [
+        initialProducts,
+        categories,
+        categoryParam,
+        sortParam,
+    ])
 
     const hasActiveFilters =
         Boolean(filters.brandId) ||
@@ -150,6 +174,55 @@ export function CatalogueClient({
         setFilters(nextFilters)
         setSort('recommended')
         setError(null)
+
+        const params = new URLSearchParams(
+            searchParams.toString(),
+        )
+
+        params.delete('sort')
+
+        if (nextFilters.categoryId) {
+            const selectedCategory = categories.find(
+                (category) =>
+                    category.id === nextFilters.categoryId,
+            )
+
+            if (selectedCategory) {
+                params.set('category', selectedCategory.slug)
+            }
+        } else {
+            params.delete('category')
+        }
+
+        if (nextFilters.brandId) {
+            params.set('brandId', nextFilters.brandId)
+        } else {
+            params.delete('brandId')
+        }
+
+        if (nextFilters.minPrice !== undefined) {
+            params.set(
+                'minPrice',
+                String(nextFilters.minPrice),
+            )
+        } else {
+            params.delete('minPrice')
+        }
+
+        if (nextFilters.maxPrice !== undefined) {
+            params.set(
+                'maxPrice',
+                String(nextFilters.maxPrice),
+            )
+        } else {
+            params.delete('maxPrice')
+        }
+
+        const query = params.toString()
+
+        router.replace(
+            query ? `/catalogue?${query}` : '/catalogue',
+        )
 
         const hasFilters =
             Boolean(nextFilters.brandId) ||
@@ -603,9 +676,7 @@ export function CatalogueClient({
                                                 key={product.id}
                                                 product={product}
                                                 onProductClick={() =>
-                                                    router.replace(
-                                                        `/catalogue/${product.slug}`,
-                                                    )
+                                                    router.replace(`/product/${product.slug}`)
                                                 }
                                             />
                                         ),
@@ -641,7 +712,7 @@ export function CatalogueClient({
                                                     {/* Product image */}
                                                     <div className="group relative h-36 w-36 shrink-0 overflow-hidden rounded-sm bg-muted-surface">
                                                         <Link
-                                                            href={`/catalogue/${product.slug}`}
+                                                            href={`/product/${product.slug}`}
                                                             aria-label={`View ${product.name}`}
                                                             className="block h-full w-full"
                                                         >
@@ -681,7 +752,7 @@ export function CatalogueClient({
                                                         </p>
 
                                                         <Link
-                                                            href={`/catalogue/${product.slug}`}
+                                                            href={`/product/${product.slug}`}
                                                             className="
                                                                 mt-1
                                                                 text-lg

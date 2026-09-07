@@ -14,6 +14,8 @@ export interface ProductBrand {
   id: string
   name: string
   slug: string
+  logoUrl: string | null
+  logoPublicId: string | null
   status: string
   createdAt: string
   updatedAt: string
@@ -248,4 +250,3 @@ export async function getSortedProducts(
 
   return response.data.products
 }
-

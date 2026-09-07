@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+
 import type { ApiProduct } from '@/api/products'
 import { useWishlist } from '@/components/providers/WishlistProvider'
 
@@ -210,7 +211,7 @@ export function ProductDetail({
                                                 setActiveImage(index)
                                             }
                                             className={[
-                                                'w-20 aspect-4/5 shrink-0 rounded-sm overflow-hidden',
+                                                'w-20 aspect-4/5 shrink-0 overflow-hidden rounded-sm',
                                                 'transition-all',
                                                 index === activeImage
                                                     ? 'ring-2 ring-brand ring-offset-1'
@@ -230,7 +231,7 @@ export function ProductDetail({
                     </div>
 
                     {/* Product Information */}
-                    <div className="lg:w-[45%] lg:sticky lg:top-24 lg:self-start">
+                    <div className="lg:sticky lg:top-24 lg:w-[45%] lg:self-start">
                         <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-brand">
                             {product.brand.name}
                         </p>
@@ -302,7 +303,11 @@ export function ProductDetail({
                                     width="18"
                                     height="18"
                                     viewBox="0 0 24 24"
-                                    fill={isWishlisted ? 'currentColor' : 'none'}
+                                    fill={
+                                        isWishlisted
+                                            ? 'currentColor'
+                                            : 'none'
+                                    }
                                     stroke="currentColor"
                                     strokeWidth="1.75"
                                     strokeLinecap="round"
@@ -334,10 +339,11 @@ export function ProductDetail({
                                         onClick={() =>
                                             setActiveTab(tab)
                                         }
-                                        className={`border-b-2 px-4 py-2.5 text-sm font-medium capitalize transition-colors ${activeTab === tab
-                                            ? 'border-brand text-brand'
-                                            : 'border-transparent text-ink-muted hover:text-ink'
-                                            }`}
+                                        className={`border-b-2 px-4 py-2.5 text-sm font-medium capitalize transition-colors ${
+                                            activeTab === tab
+                                                ? 'border-brand text-brand'
+                                                : 'border-transparent text-ink-muted hover:text-ink'
+                                        }`}
                                     >
                                         {tab}
                                     </button>
@@ -445,7 +451,7 @@ export function ProductDetail({
                                         stars={stars}
                                         count={
                                             ratingDistribution[
-                                            stars as keyof typeof ratingDistribution
+                                                stars as keyof typeof ratingDistribution
                                             ]
                                         }
                                         total={totalReviews}
@@ -524,41 +530,48 @@ export function ProductDetail({
                         </h2>
 
                         <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-4">
-                            {relatedProducts.map((related) => (
-                                <Link
-                                    key={related.id}
-                                    href={`/catalogue/${related.slug}`}
-                                    className="group"
-                                >
-                                    <div className="aspect-4/5 overflow-hidden rounded-sm bg-muted-surface">
-                                        {related.media?.[0] ? (
-                                            <img
-                                                src={
-                                                    related.media[0].url
-                                                }
-                                                alt={related.name}
-                                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-                                            />
-                                        ) : (
-                                            <div className="flex h-full items-center justify-center text-xs text-ink-faint">
-                                                No image
-                                            </div>
-                                        )}
-                                    </div>
+                            {relatedProducts.map((related) => {
+                                const relatedImage = [...related.media]
+                                    .sort(
+                                        (a, b) =>
+                                            a.sortOrder - b.sortOrder,
+                                    )[0]
 
-                                    <p className="mt-3 text-[10px] font-medium uppercase tracking-[0.18em] text-brand">
-                                        {related.brand.name}
-                                    </p>
+                                return (
+                                    <Link
+                                        key={related.id}
+                                        href={`/product/${related.slug}`}
+                                        className="group"
+                                    >
+                                        <div className="aspect-4/5 overflow-hidden rounded-sm bg-muted-surface">
+                                            {relatedImage ? (
+                                                <img
+                                                    src={relatedImage.url}
+                                                    alt={related.name}
+                                                    loading="lazy"
+                                                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                                                />
+                                            ) : (
+                                                <div className="flex h-full items-center justify-center text-xs text-ink-faint">
+                                                    No image
+                                                </div>
+                                            )}
+                                        </div>
 
-                                    <p className="mt-1 text-sm font-medium leading-snug text-ink group-hover:text-brand">
-                                        {related.name}
-                                    </p>
+                                        <p className="mt-3 text-[10px] font-medium uppercase tracking-[0.18em] text-brand">
+                                            {related.brand.name}
+                                        </p>
 
-                                    <p className="mt-1 text-sm font-semibold text-ink">
-                                        {formatPrice(related.price)}
-                                    </p>
-                                </Link>
-                            ))}
+                                        <p className="mt-1 text-sm font-medium leading-snug text-ink group-hover:text-brand">
+                                            {related.name}
+                                        </p>
+
+                                        <p className="mt-1 text-sm font-semibold text-ink">
+                                            {formatPrice(related.price)}
+                                        </p>
+                                    </Link>
+                                )
+                            })}
                         </div>
                     </section>
                 )}

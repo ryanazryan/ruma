@@ -1,5 +1,6 @@
 import { CategoryNav } from '@/components/layout/CategoryNav'
 import { Header } from '@/components/layout/Header'
+import { Footer } from '@/components/layout/Footer'
 
 export default function MarketplaceLayout({
   children,
@@ -14,6 +15,7 @@ export default function MarketplaceLayout({
       </div>
 
       {children}
+      <Footer />
     </>
   )
 }

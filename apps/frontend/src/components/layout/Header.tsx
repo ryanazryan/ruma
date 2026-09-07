@@ -21,15 +21,10 @@ export function Header() {
 
     const timer = setTimeout(() => {
       if (trimmedQuery.length < 2) {
-        router.replace('/catalogue')
         return
       }
 
-      router.replace(
-        `/catalogue?q=${encodeURIComponent(
-          trimmedQuery,
-        )}`,
-      )
+      router.replace(`/catalogue?search=${encodeURIComponent(trimmedQuery)}`)
     }, 300)
 
     return () => clearTimeout(timer)

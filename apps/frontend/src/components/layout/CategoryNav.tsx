@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 
 const categories = [
     {
@@ -13,20 +13,12 @@ const categories = [
         href: '/catalogue?category=living',
     },
     {
-        label: 'Bedroom',
-        href: '/catalogue?category=bedroom',
-    },
-    {
         label: 'Kitchen & Dining',
-        href: '/catalogue?category=kitchen-dining',
+        href: '/catalogue?category=kitchen',
     },
     {
         label: 'Outdoor',
         href: '/catalogue?category=outdoor',
-    },
-    {
-        label: 'Lighting',
-        href: '/catalogue?category=lighting',
     },
     {
         label: 'Wellness',
@@ -45,6 +37,10 @@ const categories = [
 
 export function CategoryNav() {
     const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    const activeCategory = searchParams.get('category')
+    const activeSort = searchParams.get('sort')
 
     return (
         <nav
@@ -57,8 +53,32 @@ export function CategoryNav() {
                         const isAllProducts =
                             category.href === '/catalogue'
 
+                        const categoryUrl = new URL(
+                            category.href,
+                            'http://localhost',
+                        )
+
+                        const categoryParam =
+                            categoryUrl.searchParams.get('category')
+
+                        const sortParam =
+                            categoryUrl.searchParams.get('sort')
+
                         const isActive =
-                            isAllProducts && pathname === '/catalogue'
+                            pathname === '/catalogue' &&
+                            (
+                                isAllProducts &&
+                                !activeCategory &&
+                                !activeSort
+                            ) ||
+                            (
+                                categoryParam !== null &&
+                                activeCategory === categoryParam
+                            ) ||
+                            (
+                                sortParam === 'newest' &&
+                                activeSort === 'newest'
+                            )
 
                         return (
                             <Link
