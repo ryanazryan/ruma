@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 
@@ -35,7 +36,7 @@ const categories = [
     },
 ]
 
-export function CategoryNav() {
+function CategoryNavContent() {
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
@@ -67,17 +68,13 @@ export function CategoryNav() {
                         const isActive =
                             pathname === '/catalogue' &&
                             (
-                                isAllProducts &&
-                                !activeCategory &&
-                                !activeSort
-                            ) ||
-                            (
-                                categoryParam !== null &&
-                                activeCategory === categoryParam
-                            ) ||
-                            (
-                                sortParam === 'newest' &&
-                                activeSort === 'newest'
+                                (isAllProducts &&
+                                    !activeCategory &&
+                                    !activeSort) ||
+                                (categoryParam !== null &&
+                                    activeCategory === categoryParam) ||
+                                (sortParam === 'newest' &&
+                                    activeSort === 'newest')
                             )
 
                         return (
@@ -122,5 +119,17 @@ export function CategoryNav() {
                 </div>
             </div>
         </nav>
+    )
+}
+
+export function CategoryNav() {
+    return (
+        <Suspense
+            fallback={
+                <div className="h-11 border-b border-line bg-surface" />
+            }
+        >
+            <CategoryNavContent />
+        </Suspense>
     )
 }
