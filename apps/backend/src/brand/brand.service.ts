@@ -1,14 +1,20 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { BrandStatus } from '@prisma/client';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class BrandService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cloudinary: CloudinaryService,
+  ) {}
 
   async getBrands() {
     return this.prisma.brand.findMany({
@@ -159,5 +165,52 @@ export class BrandService {
         status,
       },
     });
+  }
+
+  async uploadBrandLogo(brandId: string, file: Buffer, mimeType: string) {
+    const brand = await this.prisma.brand.findUnique({
+      where: {
+        id: brandId,
+      },
+    });
+
+    if (!brand) {
+      throw new NotFoundException('Brand not found.');
+    }
+
+    if (!mimeType.startsWith('image/')) {
+      throw new BadRequestException('Only image files are supported.');
+    }
+
+    const uploadedImage = await this.cloudinary.uploadImage(
+      file,
+      `ruma/brands/${brandId}`,
+    );
+
+    try {
+      const updatedBrand = await this.prisma.brand.update({
+        where: {
+          id: brandId,
+        },
+        data: {
+          logoUrl: uploadedImage.secure_url,
+          logoPublicId: uploadedImage.public_id,
+        },
+      });
+
+      if (brand.logoPublicId) {
+        await this.cloudinary.deleteImage(brand.logoPublicId);
+      }
+
+      return updatedBrand;
+    } catch (error) {
+      await this.cloudinary.deleteImage(uploadedImage.public_id);
+
+      if (error instanceof Error) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException('Unable to save brand logo.');
+    }
   }
 }

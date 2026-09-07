@@ -11,10 +11,14 @@ async function main() {
     where: {
       slug: 'moorlife',
     },
-    update: {},
+    update: {
+      name: 'Moorlife',
+      logoUrl: null,
+    },
     create: {
       name: 'Moorlife',
       slug: 'moorlife',
+      logoUrl: null,
     },
   });
 
@@ -22,21 +26,14 @@ async function main() {
     where: {
       slug: 'cleo-oxygen',
     },
-    update: {},
+    update: {
+      name: 'Cleo Oxygen',
+      logoUrl: null,
+    },
     create: {
       name: 'Cleo Oxygen',
       slug: 'cleo-oxygen',
-    },
-  });
-
-  const otherBrand = await prisma.brand.upsert({
-    where: {
-      slug: 'brand-lain',
-    },
-    update: {},
-    create: {
-      name: 'Brand Lain',
-      slug: 'brand-lain',
+      logoUrl: null,
     },
   });
 
@@ -44,10 +41,14 @@ async function main() {
     where: {
       slug: 'tas-purun',
     },
-    update: {},
+    update: {
+      name: 'Tas Purun',
+      logoUrl: null,
+    },
     create: {
       name: 'Tas Purun',
       slug: 'tas-purun',
+      logoUrl: null,
     },
   });
 
@@ -55,10 +56,14 @@ async function main() {
     where: {
       slug: 'tupperware',
     },
-    update: {},
+    update: {
+      name: 'Tupperware',
+      logoUrl: null,
+    },
     create: {
       name: 'Tupperware',
       slug: 'tupperware',
+      logoUrl: null,
     },
   });
 
@@ -466,8 +471,7 @@ async function main() {
     update: {
       sku: 'CO-OXYGEN-500ML',
       name: 'Cleo Oxygen 500 ml',
-      description:
-        'Cleo Oxygenated Water in a 500 ml bottle.',
+      description: 'Cleo Oxygenated Water in a 500 ml bottle.',
       price: 13000,
       brandId: cleoOxygen.id,
       supplierId: supplier.id,
@@ -477,8 +481,7 @@ async function main() {
       sku: 'CO-OXYGEN-500ML',
       name: 'Cleo Oxygen 500 ml',
       slug: 'cleo-oxygen-500ml',
-      description:
-        'Cleo Oxygenated Water in a 500 ml bottle.',
+      description: 'Cleo Oxygenated Water in a 500 ml bottle.',
       price: 13000,
       brandId: cleoOxygen.id,
       supplierId: supplier.id,
@@ -486,9 +489,7 @@ async function main() {
     },
   });
 
-  console.log(
-    `Cleo Oxygen product seed completed: ${cleoOxygenProduct.name}.`,
-  );
+  console.log(`Cleo Oxygen product seed completed: ${cleoOxygenProduct.name}.`);
 
   // --------------------------------------------------
   // Review Users
@@ -567,7 +568,7 @@ async function main() {
     '$argon2id$v=19$m=65536,p=4,t=3$FepD2zAP1boL0jrBhHiCBg$qSAU3l1gAofXeAgLraIMSfKt54R674jVIS3w2ByC7Hw';
 
   const membershipPasswordHash =
-  '$argon2id$v=19$m=65536,p=4,t=3$oaaVDd2AkfW/DAjMiUIHTw$kctrkL9Oj5kpHv9Mz5PgnY/ltMEjta0t30rzOXxe+D8';
+    '$argon2id$v=19$m=65536,p=4,t=3$oaaVDd2AkfW/DAjMiUIHTw$kctrkL9Oj5kpHv9Mz5PgnY/ltMEjta0t30rzOXxe+D8';
 
   await prisma.user.upsert({
     where: {
@@ -647,7 +648,7 @@ async function main() {
       accountStatus: 'ACTIVE',
       membershipStatus: 'NON_MEMBER',
       membershipActivatedAt: null,
-      passwordHash: membershipPasswordHash
+      passwordHash: membershipPasswordHash,
     },
     create: {
       fullName: 'Membership Customer',
@@ -685,80 +686,71 @@ async function main() {
         userId: orderCustomerA.id,
         type: 'ORDER',
         title: 'Order Delivered',
-        message:
-          'Your order RUMA-ORDER-002 has been delivered.',
+        message: 'Your order RUMA-ORDER-002 has been delivered.',
         isRead: true,
       },
       {
         userId: orderCustomerB.id,
         type: 'PAYMENT',
         title: 'Payment Successful',
-        message:
-          'Payment for order RUMA-ORDER-003 was successful.',
+        message: 'Payment for order RUMA-ORDER-003 was successful.',
         isRead: false,
       },
     ],
   });
 
-  console.log(
-    'Notification test fixture seed completed.',
-  );
+  console.log('Notification test fixture seed completed.');
 
   // --------------------------------------------------
   // Product References
   // --------------------------------------------------
 
-  const pizzariaProduct =
-    await prisma.product.findUniqueOrThrow({
-      where: {
-        slug: 'pizzaria',
-      },
-    });
+  const pizzariaProduct = await prisma.product.findUniqueOrThrow({
+    where: {
+      slug: 'pizzaria',
+    },
+  });
 
-  const mozakoProduct =
-    await prisma.product.findUniqueOrThrow({
-      where: {
-        slug: 'mozako',
-      },
-    });
+  const mozakoProduct = await prisma.product.findUniqueOrThrow({
+    where: {
+      slug: 'mozako',
+    },
+  });
 
   // --------------------------------------------------
   // Membership Test Fixture
   // --------------------------------------------------
 
-  const membershipOrder =
-    await prisma.order.upsert({
-      where: {
-        orderNumber: 'RUMA-MEMBERSHIP-001',
-      },
-      update: {
-        userId: membershipCustomer.id,
-        status: 'COMPLETED',
-        totalAmount: 610000,
-        shippingRecipientName: 'Membership Customer',
-        shippingPhone: '081234567890',
-        shippingAddressLine:
-          'Jl. Membership No. 1',
-        shippingDistrict: 'Banjarbaru Utara',
-        shippingCity: 'Banjarbaru',
-        shippingProvince: 'Kalimantan Selatan',
-        shippingPostalCode: '70714',
-      },
-      create: {
-        userId: membershipCustomer.id,
-        orderNumber: 'RUMA-MEMBERSHIP-001',
-        status: 'COMPLETED',
-        totalAmount: 610000,
-        shippingRecipientName: 'Membership Customer',
-        shippingPhone: '081234567890',
-        shippingAddressLine:
-          'Jl. Membership No. 1',
-        shippingDistrict: 'Banjarbaru Utara',
-        shippingCity: 'Banjarbaru',
-        shippingProvince: 'Kalimantan Selatan',
-        shippingPostalCode: '70714',
-      },
-    });
+  const membershipOrder = await prisma.order.upsert({
+    where: {
+      orderNumber: 'RUMA-MEMBERSHIP-001',
+    },
+    update: {
+      userId: membershipCustomer.id,
+      status: 'COMPLETED',
+      totalAmount: 610000,
+      shippingRecipientName: 'Membership Customer',
+      shippingPhone: '081234567890',
+      shippingAddressLine: 'Jl. Membership No. 1',
+      shippingDistrict: 'Banjarbaru Utara',
+      shippingCity: 'Banjarbaru',
+      shippingProvince: 'Kalimantan Selatan',
+      shippingPostalCode: '70714',
+    },
+    create: {
+      userId: membershipCustomer.id,
+      orderNumber: 'RUMA-MEMBERSHIP-001',
+      status: 'COMPLETED',
+      totalAmount: 610000,
+      shippingRecipientName: 'Membership Customer',
+      shippingPhone: '081234567890',
+      shippingAddressLine: 'Jl. Membership No. 1',
+      shippingDistrict: 'Banjarbaru Utara',
+      shippingCity: 'Banjarbaru',
+      shippingProvince: 'Kalimantan Selatan',
+      shippingPostalCode: '70714',
+    },
+  });
 
   await prisma.orderItem.deleteMany({
     where: {
@@ -787,9 +779,7 @@ async function main() {
     ],
   });
 
-  console.log(
-    'Membership test fixture seed completed.',
-  );
+  console.log('Membership test fixture seed completed.');
 
   // --------------------------------------------------
   // Order Test Fixtures
@@ -946,9 +936,7 @@ async function main() {
     },
   });
 
-  console.log(
-    'Order test fixture seed completed.',
-  );
+  console.log('Order test fixture seed completed.');
 
   // --------------------------------------------------
   // Product Reviews
@@ -959,8 +947,7 @@ async function main() {
       productId: pizzariaProduct.id,
       userId: reviewUsers[0].id,
       rating: 5,
-      reviewText:
-        'Produknya bagus, praktis, dan sesuai dengan deskripsi.',
+      reviewText: 'Produknya bagus, praktis, dan sesuai dengan deskripsi.',
     },
     {
       productId: pizzariaProduct.id,
@@ -980,19 +967,17 @@ async function main() {
       productId: pizzariaProduct.id,
       userId: reviewUsers[3].id,
       rating: 4,
-      reviewText:
-        'Desainnya praktis dan mudah digunakan.',
+      reviewText: 'Desainnya praktis dan mudah digunakan.',
     },
   ];
 
   for (const review of reviewData) {
-    const existingReview =
-      await prisma.productReview.findFirst({
-        where: {
-          productId: review.productId,
-          userId: review.userId,
-        },
-      });
+    const existingReview = await prisma.productReview.findFirst({
+      where: {
+        productId: review.productId,
+        userId: review.userId,
+      },
+    });
 
     if (existingReview) {
       await prisma.productReview.update({

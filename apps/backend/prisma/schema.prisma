@@ -148,12 +148,14 @@ model Session {
 }
 
 model Brand {
-  id        String      @id @default(uuid()) @db.Uuid
-  name      String      @db.VarChar(100)
-  slug      String      @unique @db.VarChar(120)
-  status    BrandStatus @default(ACTIVE)
-  createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id           String      @id @default(uuid()) @db.Uuid
+  name         String      @db.VarChar(100)
+  slug         String      @unique @db.VarChar(120)
+  logoUrl      String?     @map("logo_url")
+  logoPublicId String?     @map("logo_public_id")
+  status       BrandStatus @default(ACTIVE)
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   products Product[]
 
