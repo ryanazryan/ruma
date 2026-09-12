@@ -13,12 +13,17 @@ import { BrandModule } from './brand/brand.module';
 import { SupplierModule } from './supplier/supplier.module';
 import { WishlistModule } from './wishlist/wishlist.module';
 import { OrdersModule } from './orders/orders.module';
+import { PricingModule } from './pricing/pricing.module';
+import { CartModule } from './cart/cart.module';
+import { shippingConfig } from './config/shipping.config';
+import { ShippingModule } from './shipping/shipping.module';
+import { CheckoutModule } from './checkout/checkout.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [cloudinaryConfig],
+      load: [cloudinaryConfig, shippingConfig],
     }),
     ThrottlerModule.forRoot([
       {
@@ -36,6 +41,10 @@ import { OrdersModule } from './orders/orders.module';
     SupplierModule,
     WishlistModule,
     OrdersModule,
+    PricingModule,
+    CartModule,
+    ShippingModule,
+    CheckoutModule
   ],
   providers: [
     {

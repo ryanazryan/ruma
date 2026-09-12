@@ -3,6 +3,7 @@ export interface AuthUserResponse {
   fullName: string;
   email: string;
   role: string;
+  createdAt: Date;
 }
 
 export interface LoginResponseData {

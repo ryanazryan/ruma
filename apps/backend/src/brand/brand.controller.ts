@@ -1,16 +1,21 @@
 import {
+  BadRequestException,
   Body,
-  Post,
-  UseGuards,
   Controller,
   Get,
   Param,
   Patch,
+  Post,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { UserRole } from '@prisma/client';
 import { SessionAuthGuard } from '../auth/guards/session-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { BrandService } from './brand.service';
 import { UpdateBrandDto } from './dto/update-brand.dto';
@@ -55,6 +60,43 @@ export class BrandController {
     return {
       success: true,
       message: 'Brand created successfully.',
+      data: {
+        brand,
+      },
+    };
+  }
+
+  @Post(':brandId/logo')
+  @UseGuards(SessionAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 5 * 1024 * 1024,
+      },
+    }),
+  )
+  async uploadBrandLogo(
+    @Param('brandId') brandId: string,
+    @UploadedFile()
+    file: {
+      buffer: Buffer;
+      mimetype: string;
+    },
+  ) {
+    if (!file) {
+      throw new BadRequestException('Brand logo is required.');
+    }
+
+    const brand = await this.brandService.uploadBrandLogo(
+      brandId,
+      file.buffer,
+      file.mimetype,
+    );
+
+    return {
+      success: true,
+      message: 'Brand logo uploaded successfully.',
       data: {
         brand,
       },

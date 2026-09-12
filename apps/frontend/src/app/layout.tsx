@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Instrument_Sans } from "next/font/google";
 import "./globals.css";
+import { WishlistProvider } from '@/components/providers/WishlistProvider'
 
 const instrumentSans = Instrument_Sans({
   variable: "--font-instrument-sans",
@@ -29,7 +30,9 @@ export default function RootLayout({
       <body
         className={`${instrumentSans.variable} ${fraunces.variable} min-h-full flex flex-col`}
       >
-        {children}
+        <WishlistProvider>
+          {children}
+        </WishlistProvider>
       </body>
     </html>
   );

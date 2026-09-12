@@ -53,7 +53,7 @@ export default function LoginPage() {
       setState('success');
 
       window.setTimeout(() => {
-        router.push('/customer');
+        router.push('/');
       }, 1200);
     } catch (requestError) {
       setState('invalidCredentials');

@@ -20,6 +20,11 @@ export class ProductService {
         brand: true,
         supplier: true,
         category: true,
+        media: {
+          orderBy: {
+            sortOrder: 'asc',
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
@@ -87,6 +92,11 @@ export class ProductService {
         brand: true,
         supplier: true,
         category: true,
+        media: {
+          orderBy: {
+            sortOrder: 'asc',
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
@@ -141,6 +151,11 @@ export class ProductService {
         brand: true,
         supplier: true,
         category: true,
+        media: {
+          orderBy: {
+            sortOrder: 'asc',
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
@@ -157,6 +172,11 @@ export class ProductService {
         brand: true,
         supplier: true,
         category: true,
+        media: {
+          orderBy: {
+            sortOrder: 'asc',
+          },
+        },
       },
       orderBy,
     });
@@ -364,6 +384,11 @@ export class ProductService {
         brand: true,
         supplier: true,
         category: true,
+        media: {
+          orderBy: {
+            sortOrder: 'asc',
+          },
+        },
       },
     });
 

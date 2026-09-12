@@ -1,226 +1,348 @@
-'use client';
+'use client'
 
-import Link from 'next/link';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useState } from 'react'
+import Link from 'next/link'
 
-import { registerUser } from '../../lib/api';
+import AuthLayout from '@/components/auth/AuthLayout'
+
+import Alert from '@/components/ui/alert'
+import Button from '@/components/ui/button'
+import FormHeading from '@/components/ui/form-heading'
+import Input from '@/components/ui/input'
+import PasswordInput from '@/components/ui/password-input'
+
+import { registerUser } from '@/lib/api'
 
 type FormValues = {
-  fullName: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-};
+  fullName: string
+  email: string
+  password: string
+  confirmPassword: string
+}
 
 const initialValues: FormValues = {
   fullName: '',
   email: '',
   password: '',
   confirmPassword: '',
-};
+}
 
-function validate(values: FormValues): string | undefined {
-  const fullName = values.fullName.trim();
+type FieldErrors = {
+  fullName?: string
+  email?: string
+  password?: string
+  confirmPassword?: string
+}
+
+function validate(values: FormValues): FieldErrors {
+  const errors: FieldErrors = {}
+
+  const fullName = values.fullName.trim()
+  const email = values.email.trim()
 
   if (fullName.length < 3 || fullName.length > 100) {
-    return 'Full name must be between 3 and 100 characters.';
+    errors.fullName =
+      'Full name must be between 3 and 100 characters.'
   }
 
-  if (!/^\S+@\S+\.\S+$/.test(values.email.trim())) {
-    return 'Enter a valid email address.';
+  if (!/^\S+@\S+\.\S+$/.test(email)) {
+    errors.email = 'Enter a valid email address.'
   }
 
   if (values.password.length < 8) {
-    return 'Password must be at least 8 characters.';
+    errors.password =
+      'Password must be at least 8 characters.'
   }
 
   if (values.password !== values.confirmPassword) {
-    return 'Password confirmation does not match.';
+    errors.confirmPassword =
+      'Password confirmation does not match.'
   }
 
-  return undefined;
+  return errors
 }
 
 export default function RegisterPage() {
-  const [values, setValues] = useState<FormValues>(initialValues);
-  const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isRegistered, setIsRegistered] = useState(false);
+  const [values, setValues] = useState<FormValues>(initialValues)
 
-  const updateValue = (field: keyof FormValues, value: string) => {
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
+
+  const [serverError, setServerError] = useState('')
+
+  const [successMessage, setSuccessMessage] = useState('')
+
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const [isRegistered, setIsRegistered] = useState(false)
+
+  const updateValue = (
+    field: keyof FormValues,
+    value: string,
+  ) => {
     setValues((current) => ({
       ...current,
       [field]: value,
-    }));
-  };
+    }))
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError('');
+    setFieldErrors((current) => ({
+      ...current,
+      [field]: undefined,
+    }))
 
-    const validationError = validate(values);
+    setServerError('')
+  }
 
-    if (validationError) {
-      setError(validationError);
-      return;
+  async function handleSubmit(
+    event: FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault()
+
+    setServerError('')
+
+    const errors = validate(values)
+
+    setFieldErrors(errors)
+
+    if (Object.keys(errors).length > 0) {
+      return
     }
 
-    setIsSubmitting(true);
+    setIsSubmitting(true)
 
     try {
-      await registerUser({
+      const response = await registerUser({
         fullName: values.fullName.trim(),
         email: values.email.trim(),
         password: values.password,
         confirmPassword: values.confirmPassword,
-      });
+      })
 
-      setIsRegistered(true);
+      setSuccessMessage(response.message)
+      setIsRegistered(true)
     } catch (requestError) {
-      setError(
+      setServerError(
         requestError instanceof Error
           ? requestError.message
           : 'Unable to register your account.',
-      );
+      )
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
   }
 
   if (isRegistered) {
     return (
-      <PageFrame>
-        <h1 className="text-2xl font-semibold text-slate-900">
-          Registration successful
-        </h1>
-
-        <p className="mt-3 text-slate-600">
-          Please check your email and open the verification link to activate
-          your account.
-        </p>
-
-        <Link
-          className="mt-6 inline-block font-medium text-emerald-700 hover:underline"
-          href="/verify-email/resend"
-        >
-          Didn&apos;t receive an email? Resend verification
-        </Link>
-      </PageFrame>
-    );
+      <AuthLayout>
+        <RegistrationSuccess
+          email={values.email.trim()}
+          message={successMessage}
+        />
+      </AuthLayout>
+    )
   }
 
   return (
-    <PageFrame>
-      <h1 className="text-2xl font-semibold text-slate-900">
-        Create your account
-      </h1>
-
-      <p className="mt-2 text-slate-600">
-        Register to begin using Ruma.
-      </p>
-
-      <form
-        className="mt-8 space-y-5"
-        onSubmit={handleSubmit}
-        noValidate
-      >
-        <Field
-          label="Full name"
-          name="fullName"
-          value={values.fullName}
-          onChange={(value) => updateValue('fullName', value)}
-          autoComplete="name"
+    <AuthLayout>
+      <div className="space-y-8">
+        <FormHeading
+          title="Create account"
+          subtitle="Join Ruma to discover premium brands and curated collections."
         />
 
-        <Field
-          label="Email address"
-          name="email"
-          type="email"
-          value={values.email}
-          onChange={(value) => updateValue('email', value)}
-          autoComplete="email"
-        />
+        {serverError && (
+          <Alert
+            variant="error"
+            title="Something went wrong"
+          >
+            {serverError}
+          </Alert>
+        )}
 
-        <Field
-          label="Password"
-          name="password"
-          type="password"
-          value={values.password}
-          onChange={(value) => updateValue('password', value)}
-          autoComplete="new-password"
-        />
-
-        <Field
-          label="Confirm password"
-          name="confirmPassword"
-          type="password"
-          value={values.confirmPassword}
-          onChange={(value) => updateValue('confirmPassword', value)}
-          autoComplete="new-password"
-        />
-
-        {error ? (
-          <p className="text-sm text-red-700">{error}</p>
-        ) : null}
-
-        <button
-          className="w-full rounded-md bg-emerald-700 px-4 py-2 font-medium text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
-          type="submit"
-          disabled={isSubmitting}
+        <form
+          className="space-y-5"
+          onSubmit={handleSubmit}
+          noValidate
         >
-          {isSubmitting ? 'Registering…' : 'Register'}
-        </button>
-      </form>
-    </PageFrame>
-  );
+          <Input
+            label="Full name"
+            name="fullName"
+            type="text"
+            placeholder="Your full name"
+            value={values.fullName}
+            onChange={(event) =>
+              updateValue(
+                'fullName',
+                event.target.value,
+              )
+            }
+            error={fieldErrors.fullName}
+            disabled={isSubmitting}
+            autoComplete="name"
+            required
+          />
+
+          <Input
+            label="Email address"
+            name="email"
+            type="email"
+            placeholder="you@example.com"
+            value={values.email}
+            onChange={(event) =>
+              updateValue(
+                'email',
+                event.target.value,
+              )
+            }
+            error={fieldErrors.email}
+            disabled={isSubmitting}
+            autoComplete="email"
+            required
+          />
+
+          <PasswordInput
+            label="Password"
+            name="password"
+            placeholder="••••••••"
+            value={values.password}
+            onChange={(event) =>
+              updateValue(
+                'password',
+                event.target.value,
+              )
+            }
+            error={fieldErrors.password}
+            hint={
+              !fieldErrors.password
+                ? '8+ characters with letters, numbers, or symbols'
+                : undefined
+            }
+            disabled={isSubmitting}
+            autoComplete="new-password"
+            required
+          />
+
+          <PasswordInput
+            label="Confirm password"
+            name="confirmPassword"
+            placeholder="••••••••"
+            value={values.confirmPassword}
+            onChange={(event) =>
+              updateValue(
+                'confirmPassword',
+                event.target.value,
+              )
+            }
+            error={fieldErrors.confirmPassword}
+            disabled={isSubmitting}
+            autoComplete="new-password"
+            required
+          />
+
+          <Button
+            type="submit"
+            className="w-full"
+            size="lg"
+            loading={isSubmitting}
+          >
+            {isSubmitting
+              ? 'Creating account…'
+              : 'Create account'}
+          </Button>
+        </form>
+
+        <p className="text-sm text-center text-ink-muted">
+          Already have an account?{' '}
+          <Link
+            href="/login"
+            className="text-brand font-medium hover:text-brand-dark transition-colors"
+          >
+            Sign in
+          </Link>
+        </p>
+      </div>
+    </AuthLayout>
+  )
 }
 
-function PageFrame({
-  children,
+function RegistrationSuccess({
+  email,
+  message,
 }: {
-  children: React.ReactNode;
+  email: string
+  message: string
 }) {
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg items-center px-6 py-12">
-      <section className="w-full rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
-        {children}
-      </section>
-    </main>
-  );
-}
+    <div className="space-y-8">
+      <div className="space-y-4">
+        <div className="w-16 h-16 rounded-full bg-brand-tint flex items-center justify-center">
+          <svg
+            width="28"
+            height="28"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#2a6049"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+            <polyline points="22,6 12,13 2,6" />
+          </svg>
+        </div>
 
-function Field({
-  label,
-  name,
-  value,
-  onChange,
-  type = 'text',
-  autoComplete,
-}: {
-  label: string;
-  name: string;
-  value: string;
-  onChange: (value: string) => void;
-  type?: string;
-  autoComplete: string;
-}) {
-  return (
-    <label
-      className="block text-sm font-medium text-slate-700"
-      htmlFor={name}
-    >
-      {label}
+        <div>
+          <h1
+            className="text-2xl font-semibold text-ink tracking-tight"
+            style={{
+              fontFamily:
+                'var(--font-fraunces), Georgia, serif',
+            }}
+          >
+            Check your inbox
+          </h1>
 
-      <input
-        className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 outline-none ring-emerald-600 focus:ring-2"
-        id={name}
-        name={name}
-        type={type}
-        autoComplete={autoComplete}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        required
-      />
-    </label>
-  );
+          <p className="text-sm text-ink-muted mt-2 leading-relaxed">
+            {message}
+          </p>
+
+          <p className="text-sm text-ink-muted mt-3 leading-relaxed">
+            Registered email:{' '}
+            <span className="font-medium text-ink">
+              {email}
+            </span>
+          </p>
+        </div>
+      </div>
+
+      <div className="p-4 rounded-md border border-line bg-muted-surface space-y-1">
+        <p className="text-xs font-medium text-ink-sub">
+          Didn&apos;t receive the email?
+        </p>
+
+        <p className="text-xs text-ink-muted">
+          Check your spam folder, or request a new
+          verification link below.
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        <Link
+          href="/verify-email/resend"
+          className="flex items-center justify-center w-full h-12 px-6 rounded-md bg-cream border border-line text-brand font-medium hover:bg-cream-dark hover:border-line-strong transition-colors"
+        >
+          Resend verification email
+        </Link>
+
+        <p className="text-sm text-center text-ink-muted">
+          Already verified?{' '}
+          <Link
+            href="/login"
+            className="text-brand font-medium hover:text-brand-dark transition-colors"
+          >
+            Sign in
+          </Link>
+        </p>
+      </div>
+    </div>
+  )
 }
