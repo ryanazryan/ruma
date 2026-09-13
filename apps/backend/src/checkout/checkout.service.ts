@@ -20,6 +20,11 @@ export class CheckoutService {
   ) {}
 
   async getSummary(userId: string, addressId: string) {
+    /*
+     * --------------------------------------------------------
+     * 1. Validate shipping address ownership
+     * --------------------------------------------------------
+     */
     const address = await this.prisma.customerAddress.findFirst({
       where: {
         id: addressId,
@@ -37,6 +42,11 @@ export class CheckoutService {
       );
     }
 
+    /*
+     * --------------------------------------------------------
+     * 2. Load customer cart
+     * --------------------------------------------------------
+     */
     const cart = await this.prisma.cart.findUnique({
       where: {
         userId,
@@ -87,6 +97,24 @@ export class CheckoutService {
       );
     }
 
+    /*
+     * --------------------------------------------------------
+     * 3. Calculate item pricing
+     * --------------------------------------------------------
+     *
+     * pricing.finalPrice already represents the price after
+     * applicable pricing rules.
+     *
+     * originalSubtotal
+     *   = original price × quantity
+     *
+     * discountAmount
+     *   = (original price - final price) × quantity
+     *
+     * subtotalAmount
+     *   = final price × quantity
+     * --------------------------------------------------------
+     */
     const items = await Promise.all(
       cart.items.map(async (item) => {
         if (item.quantity <= 0) {
@@ -99,6 +127,12 @@ export class CheckoutService {
           userId,
           item.productId,
         );
+
+        const originalSubtotal =
+          pricing.originalPrice * item.quantity;
+
+        const discountAmount =
+          (pricing.originalPrice - pricing.finalPrice) * item.quantity;
 
         const subtotal = pricing.finalPrice * item.quantity;
 
@@ -119,31 +153,47 @@ export class CheckoutService {
             isMemberDiscountApplicable:
               pricing.isMemberDiscountApplicable,
           },
+          originalSubtotal,
+          discountAmount,
           subtotal,
         };
       }),
     );
 
-    const subtotal = items.reduce(
-      (total, item) => total + item.subtotal,
+    const originalSubtotalAmount = items.reduce(
+      (total, item) => total + item.originalSubtotal,
       0,
     );
 
     const discountAmount = items.reduce(
-      (total, item) =>
-        total +
-        (item.pricing.originalPrice - item.pricing.finalPrice) *
-          item.quantity,
+      (total, item) => total + item.discountAmount,
       0,
     );
 
+    const subtotalAmount = items.reduce(
+      (total, item) => total + item.subtotal,
+      0,
+    );
+
+    /*
+     * --------------------------------------------------------
+     * 4. Calculate shipping
+     * --------------------------------------------------------
+     */
     const shipping = await this.shippingService.calculateShipping(
       userId,
       addressId,
     );
 
     return {
-      items,
+      items: items.map((item) => ({
+        cartItemId: item.cartItemId,
+        product: item.product,
+        quantity: item.quantity,
+        pricing: item.pricing,
+        subtotal: item.subtotal,
+      })),
+
       shippingAddress: {
         id: address.id,
         label: address.label,
@@ -155,12 +205,15 @@ export class CheckoutService {
         province: address.province,
         postalCode: address.postalCode,
       },
+
       summary: {
-        subtotalAmount: subtotal,
+        originalSubtotalAmount,
+        subtotalAmount,
         discountAmount,
         shippingAmount: 0,
-        totalAmount: subtotal,
+        totalAmount: subtotalAmount,
       },
+
       shippingOptions: shipping.options,
     };
   }
@@ -170,6 +223,11 @@ export class CheckoutService {
     dto: PlaceOrderDto,
     idempotencyKey?: string,
   ) {
+    /*
+     * --------------------------------------------------------
+     * 1. Validate idempotency key
+     * --------------------------------------------------------
+     */
     if (!idempotencyKey?.trim()) {
       throw new BadRequestException(
         'Idempotency-Key header is required.',
@@ -181,7 +239,7 @@ export class CheckoutService {
 
     /*
      * --------------------------------------------------------
-     * 1. Validate shipping address ownership
+     * 2. Validate shipping address ownership
      * --------------------------------------------------------
      */
     const address = await this.prisma.customerAddress.findFirst({
@@ -192,9 +250,7 @@ export class CheckoutService {
     });
 
     if (!address) {
-      throw new NotFoundException(
-        'Shipping address not found.',
-      );
+      throw new NotFoundException('Shipping address not found.');
     }
 
     if (!address.postalCode?.trim()) {
@@ -205,7 +261,7 @@ export class CheckoutService {
 
     /*
      * --------------------------------------------------------
-     * 2. Load customer cart
+     * 3. Load customer cart
      * --------------------------------------------------------
      */
     const cart = await this.prisma.cart.findUnique({
@@ -215,14 +271,12 @@ export class CheckoutService {
     });
 
     if (!cart) {
-      throw new BadRequestException(
-        'Shopping cart is empty.',
-      );
+      throw new BadRequestException('Shopping cart is empty.');
     }
 
     /*
      * --------------------------------------------------------
-     * 3. Load selected cart items
+     * 4. Load selected cart items
      * --------------------------------------------------------
      */
     const selectedItems = await this.prisma.cartItem.findMany({
@@ -257,7 +311,7 @@ export class CheckoutService {
 
     /*
      * --------------------------------------------------------
-     * 4. Validate selected items
+     * 5. Validate selected items
      * --------------------------------------------------------
      */
     for (const item of selectedItems) {
@@ -285,24 +339,61 @@ export class CheckoutService {
 
     /*
      * --------------------------------------------------------
-     * 5. Recalculate pricing
+     * 6. Recalculate pricing
+     * --------------------------------------------------------
+     *
+     * Important:
+     *
+     * originalSubtotalAmount
+     *   = original price × quantity
+     *
+     * discountAmount
+     *   = (original price - final price) × quantity
+     *
+     * subtotalAmount
+     *   = final price × quantity
+     *
+     * totalAmount
+     *   = subtotalAmount + shipping
+     *
+     * This avoids deducting the discount twice.
      * --------------------------------------------------------
      */
     const pricedItems = await Promise.all(
       selectedItems.map(async (item) => {
-        const pricing =
-          await this.pricingService.getProductPrice(
-            userId,
-            item.productId,
-          );
+        const pricing = await this.pricingService.getProductPrice(
+          userId,
+          item.productId,
+        );
+
+        const originalSubtotal =
+          pricing.originalPrice * item.quantity;
+
+        const discountAmount =
+          (pricing.originalPrice - pricing.finalPrice) *
+          item.quantity;
+
+        const subtotal =
+          pricing.finalPrice * item.quantity;
 
         return {
           ...item,
           pricing,
-          subtotal:
-            pricing.finalPrice * item.quantity,
+          originalSubtotal,
+          discountAmount,
+          subtotal,
         };
       }),
+    );
+
+    const originalSubtotalAmount = pricedItems.reduce(
+      (total, item) => total + item.originalSubtotal,
+      0,
+    );
+
+    const discountAmount = pricedItems.reduce(
+      (total, item) => total + item.discountAmount,
+      0,
     );
 
     const subtotalAmount = pricedItems.reduce(
@@ -310,25 +401,18 @@ export class CheckoutService {
       0,
     );
 
-    const discountAmount = pricedItems.reduce(
-      (total, item) =>
-        total +
-        (item.pricing.originalPrice -
-          item.pricing.finalPrice) *
-          item.quantity,
-      0,
-    );
-
     /*
      * --------------------------------------------------------
-     * 6. Recalculate shipping
+     * 7. Recalculate shipping
+     * --------------------------------------------------------
+     *
+     * Shipping must always be revalidated at Place Order.
      * --------------------------------------------------------
      */
-    const shipping =
-      await this.shippingService.calculateShipping(
-        userId,
-        dto.addressId,
-      );
+    const shipping = await this.shippingService.calculateShipping(
+      userId,
+      dto.addressId,
+    );
 
     const selectedShipping = shipping.options.find(
       (option) =>
@@ -345,36 +429,45 @@ export class CheckoutService {
     const shippingAmount = selectedShipping.price;
 
     /*
-     * Financial formula:
-     *
-     * subtotal - discount + shipping
+     * --------------------------------------------------------
+     * 8. Final total
+     * --------------------------------------------------------
      */
-    const totalAmount =
-      subtotalAmount -
-      discountAmount +
-      shippingAmount;
+    const totalAmount = subtotalAmount + shippingAmount;
 
     /*
      * --------------------------------------------------------
-     * 7. Payment / reservation expiration
+     * 9. Payment expiration
+     * --------------------------------------------------------
+     *
+     * Automated:
+     *   QRIS / VA = 30 minutes
+     *
+     * Manual:
+     *   Bank Transfer = 1 hour
      * --------------------------------------------------------
      */
+    const paymentWindowMinutes =
+      dto.paymentMethod === 'MANUAL_BANK_TRANSFER'
+        ? 60
+        : 30;
+
     const expiresAt = new Date(
-      Date.now() + 30 * 60 * 1000,
+      Date.now() + paymentWindowMinutes * 60 * 1000,
     );
 
     const orderNumber = this.generateOrderNumber();
 
     /*
      * --------------------------------------------------------
-     * 8. Atomic checkout transaction
+     * 10. Atomic checkout transaction
      * --------------------------------------------------------
      */
     const result = await this.prisma.$transaction(
       async (tx) => {
         /*
          * ----------------------------------------------------
-         * 8.1 Create idempotency record
+         * 10.1 Create idempotency record
          * ----------------------------------------------------
          */
         await tx.idempotencyRecord.createMany({
@@ -408,9 +501,7 @@ export class CheckoutService {
         /*
          * Same key + different request
          */
-        if (
-          idempotencyRecord.requestHash !== requestHash
-        ) {
+        if (idempotencyRecord.requestHash !== requestHash) {
           throw new ConflictException(
             'Idempotency-Key has already been used with a different request.',
           );
@@ -419,35 +510,24 @@ export class CheckoutService {
         /*
          * Same key + already completed
          */
-        if (
-          idempotencyRecord.status === 'COMPLETED'
-        ) {
+        if (idempotencyRecord.status === 'COMPLETED') {
           return idempotencyRecord.responsePayload;
         }
 
         /*
-         * Same key + still processing
+         * A PROCESSING record can normally only exist while
+         * another request is currently handling the same key.
+         *
+         * We intentionally do not reclaim stale records here.
+         * Recovery belongs to a separate mechanism.
          */
-        if (
-          idempotencyRecord.status === 'PROCESSING' &&
-          idempotencyRecord.createdAt.getTime() <
-            Date.now()
-        ) {
-          /*
-           * Do not reclaim stale records here yet.
-           * Recovery policy belongs to a separate mechanism.
-           */
-        }
 
         /*
          * ----------------------------------------------------
-         * 8.2 Load inventory and reserve stock
+         * 10.2 Load inventory and reserve stock
          * ----------------------------------------------------
          */
-        const inventoryMap = new Map<
-          string,
-          string
-        >();
+        const inventoryMap = new Map<string, string>();
 
         for (const item of pricedItems) {
           const inventory =
@@ -501,7 +581,7 @@ export class CheckoutService {
 
         /*
          * ----------------------------------------------------
-         * 8.3 Create order
+         * 10.3 Create order
          * ----------------------------------------------------
          */
         const order = await tx.order.create({
@@ -544,7 +624,7 @@ export class CheckoutService {
 
         /*
          * ----------------------------------------------------
-         * 8.4 Create order item snapshots
+         * 10.4 Create order item snapshots
          * ----------------------------------------------------
          */
         await tx.orderItem.createMany({
@@ -561,7 +641,7 @@ export class CheckoutService {
 
         /*
          * ----------------------------------------------------
-         * 8.5 Create initial order status history
+         * 10.5 Create initial order status history
          * ----------------------------------------------------
          */
         await tx.orderStatusHistory.create({
@@ -577,7 +657,7 @@ export class CheckoutService {
 
         /*
          * ----------------------------------------------------
-         * 8.6 Create stock reservations
+         * 10.6 Create stock reservations
          * ----------------------------------------------------
          */
         await tx.stockReservation.createMany({
@@ -592,7 +672,7 @@ export class CheckoutService {
 
         /*
          * ----------------------------------------------------
-         * 8.7 Create stock movement audit records
+         * 10.7 Create stock movement audit records
          * ----------------------------------------------------
          */
         await tx.stockMovement.createMany({
@@ -611,9 +691,23 @@ export class CheckoutService {
 
         /*
          * ----------------------------------------------------
-         * 8.8 Create payment
+         * 10.8 Create payment
+         * ----------------------------------------------------
+         *
+         * Automated:
+         *   QRIS / VA -> MIDTRANS
+         *
+         * Manual:
+         *   MANUAL_BANK_TRANSFER -> null
+         *
+         * PaymentAttempt is NOT created here.
+         * It will be created when the automated provider
+         * initiation actually happens.
          * ----------------------------------------------------
          */
+        const isManualBankTransfer =
+          dto.paymentMethod === 'MANUAL_BANK_TRANSFER';
+
         const payment =
           await tx.payment.create({
             data: {
@@ -621,28 +715,16 @@ export class CheckoutService {
               method: dto.paymentMethod,
               status: 'PENDING',
               amount: totalAmount,
-              provider: 'MIDTRANS',
+              provider: isManualBankTransfer
+                ? null
+                : 'MIDTRANS',
               expiresAt,
             },
           });
 
         /*
          * ----------------------------------------------------
-         * 8.9 Create initial payment attempt
-         * ----------------------------------------------------
-         */
-        const paymentAttempt =
-          await tx.paymentAttempt.create({
-            data: {
-              paymentId: payment.id,
-              attemptNumber: 1,
-              status: 'PENDING',
-            },
-          });
-
-        /*
-         * ----------------------------------------------------
-         * 8.10 Build transaction response
+         * 10.9 Build transaction response
          * ----------------------------------------------------
          */
         const response = {
@@ -651,6 +733,7 @@ export class CheckoutService {
           status: order.status,
 
           summary: {
+            originalSubtotalAmount,
             subtotalAmount,
             discountAmount,
             shippingAmount,
@@ -677,18 +760,15 @@ export class CheckoutService {
             method: payment.method,
             status: payment.status,
             amount: payment.amount,
+            provider: payment.provider,
             expiresAt:
               payment.expiresAt.toISOString(),
-            attemptId:
-              paymentAttempt.id,
-            attemptNumber:
-              paymentAttempt.attemptNumber,
           },
         };
 
         /*
          * ----------------------------------------------------
-         * 8.11 Complete idempotency record
+         * 10.10 Complete idempotency record
          * ----------------------------------------------------
          */
         await tx.idempotencyRecord.update({
