@@ -1,84 +1,120 @@
-# Ruma
+# Ruma Marketplace
 
-Ruma is a scalable multi-brand lifestyle marketplace designed to support product discovery, shopping, checkout, payments, order management, inventory, and marketplace operations.
+Ruma Marketplace is a web-based e-commerce platform designed to provide a seamless customer shopping experience while supporting integrated marketplace operations.
 
-The platform is designed to support products from multiple brands, suppliers, and categories while providing an extensible foundation for future business and commerce capabilities.
+The platform covers the core customer journey, including product discovery, catalogue browsing, product search and filtering, wishlist, cart management, checkout, shipping, payment, order management, membership, and customer account management.
+
+On the operational side, Ruma supports marketplace management capabilities such as product management, inventory management, order management, payment verification, and user management.
 
 ## Project Status
 
-🚧 Under Development
+🚧 **Under Development**
 
 ## Tech Stack
 
 ### Frontend
-
 - Next.js
 - React
 - TypeScript
 - Tailwind CSS
 
 ### Backend
-
 - NestJS
 - TypeScript
 - Prisma ORM
 
-### Database & Infrastructure
-
+### Database
 - PostgreSQL
 - Redis
-- Docker
 
 ### External Services
-
 - Midtrans
 - Biteship
 - Cloudinary
 - Resend
 
-## Core Modules
+## Core Capabilities
 
+### Customer
 - Authentication
-- Customer
-- Product
-- Shopping
+- Product catalogue
+- Product search
+- Product filtering and sorting
+- Product details
+- Wishlist
+- Shopping cart
 - Checkout
+- Shipping calculation
 - Payment
-- Order
-- Inventory
-- Promotion
-- Notification
-- Reporting
-- Administration
+- Order management
+- Membership
+- Customer account
 
-## Architecture
+### Marketplace Operations
+- Product management
+- Inventory management
+- Order management
+- Payment verification
+- User management
+- Marketplace administration
 
-Ruma uses a modular monolith architecture with a separate web frontend and backend REST API.
+## Repository Structure
 
 ```text
-Web Browser
-    │
-    ▼
-Next.js / React
-    │
-    ▼
-NestJS REST API
-    │
-    ├── Authentication
-    ├── Customer
-    ├── Product
-    ├── Shopping
-    ├── Checkout
-    ├── Payment
-    ├── Order
-    ├── Inventory
-    ├── Promotion
-    ├── Notification
-    ├── Reporting
-    └── Administration
-    │
-    ▼
-Prisma ORM
-    │
-    ▼
+apps/
+├── frontend/
+└── backend/
+
+packages/
+docs/
+docker/
+.github/
+
+Documentation
+
+Project documentation is maintained under the docs/ directory and provides the reference for product requirements, business rules, system requirements, database design, API specifications, and development guidelines.
+
+The main documentation areas include:
+
+Master Feature List
+Functional Requirements
+Business Rules & State Machines
+Software Requirements Specification
+Database Design
+API Documentation
+Development Guide
+Architecture
+
+Ruma Marketplace follows a modular full-stack architecture designed to support maintainability, scalability, and future feature expansion.
+
+Frontend
+   │
+   │ REST API
+   ▼
+NestJS Backend
+   │
+   ├── Prisma ORM
+   │
+   ▼
 PostgreSQL
+   │
+   └── Redis
+
+External Services
+   ├── Midtrans
+   ├── Biteship
+   ├── Cloudinary
+   └── Resend
+Development
+
+The project is structured as a monorepo containing the frontend application, backend application, shared packages, documentation, and development infrastructure.
+
+apps/frontend   → Customer-facing web application
+apps/backend    → REST API and business logic
+packages/       → Shared packages
+docs/           → Project documentation
+docker/         → Development infrastructure
+.github/        → Repository configuration and workflows
+License
+
+This project is currently under development and is intended for authorized use only.
