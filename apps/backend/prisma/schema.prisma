@@ -7,11 +7,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-//
 // ============================
 // ENUMS
 // ============================
-//
 
 enum UserRole {
   CUSTOMER
@@ -74,6 +72,7 @@ enum MembershipStatus {
 enum PaymentMethod {
   QRIS
   VIRTUAL_ACCOUNT
+  MANUAL_BANK_TRANSFER
 }
 
 enum PaymentProvider {
@@ -94,6 +93,12 @@ enum PaymentAttemptStatus {
   PAID
   FAILED
   EXPIRED
+}
+
+enum PaymentSubmissionStatus {
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
 }
 
 enum StockMovementType {
@@ -117,11 +122,9 @@ enum IdempotencyStatus {
   FAILED
 }
 
-//
 // ============================
 // USER / AUTHENTICATION
 // ============================
-//
 
 model User {
   id                   String        @id @default(uuid()) @db.Uuid
@@ -154,6 +157,8 @@ model User {
   idempotencyRecords IdempotencyRecord[]
 
   orderStatusChanges OrderStatusHistory[] @relation("OrderStatusChangedBy")
+
+  paymentSubmissionsVerified PaymentSubmission[] @relation("PaymentSubmissionVerifiedBy")
 
   @@index([role], map: "idx_users_role")
   @@index([accountStatus], map: "idx_users_account_status")
@@ -220,11 +225,9 @@ model Session {
   @@map("sessions")
 }
 
-//
 // ============================
 // PRODUCT CATALOG
 // ============================
-//
 
 model Brand {
   id           String      @id @default(uuid()) @db.Uuid
@@ -363,11 +366,9 @@ model WishlistItem {
   @@map("wishlist_items")
 }
 
-//
 // ============================
 // SHOPPING CART
 // ============================
-//
 
 model Cart {
   id        String   @id @default(uuid()) @db.Uuid
@@ -399,11 +400,9 @@ model CartItem {
   @@map("cart_items")
 }
 
-//
 // ============================
 // INVENTORY
 // ============================
-//
 
 model Inventory {
   id                String   @id @default(uuid()) @db.Uuid
@@ -443,11 +442,9 @@ model StockMovement {
   @@map("stock_movements")
 }
 
-//
 // ============================
 // ORDERS
 // ============================
-//
 
 model Order {
   id          String      @id @default(uuid()) @db.Uuid
@@ -555,20 +552,18 @@ model StockReservation {
   @@map("stock_reservations")
 }
 
-//
 // ============================
 // PAYMENT
 // ============================
-//
 
 model Payment {
-  id                    String          @id @default(uuid()) @db.Uuid
-  orderId               String          @unique @map("order_id") @db.Uuid
+  id                    String           @id @default(uuid()) @db.Uuid
+  orderId               String           @unique @map("order_id") @db.Uuid
   method                PaymentMethod
-  status                PaymentStatus   @default(PENDING)
+  status                PaymentStatus    @default(PENDING)
   amount                Int
-  provider              PaymentProvider @default(MIDTRANS)
-  providerTransactionId String?         @unique @map("provider_transaction_id") @db.VarChar(150)
+  provider              PaymentProvider?
+  providerTransactionId String?          @unique @map("provider_transaction_id") @db.VarChar(150)
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
@@ -576,8 +571,9 @@ model Payment {
   paidAt    DateTime? @map("paid_at") @db.Timestamptz(6)
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  order    Order            @relation(fields: [orderId], references: [id])
-  attempts PaymentAttempt[]
+  order       Order               @relation(fields: [orderId], references: [id])
+  attempts    PaymentAttempt[]
+  submissions PaymentSubmission[]
 
   @@index([status], map: "idx_payments_status")
   @@index([createdAt], map: "idx_payments_created_at")
@@ -605,11 +601,36 @@ model PaymentAttempt {
   @@map("payment_attempts")
 }
 
-//
+model PaymentSubmission {
+  id               String                  @id @default(uuid()) @db.Uuid
+  paymentId        String                  @map("payment_id") @db.Uuid
+  senderBank       String                  @map("sender_bank") @db.VarChar(100)
+  senderName       String                  @map("sender_name") @db.VarChar(100)
+  transferAmount   Int                     @map("transfer_amount")
+  transferredAt    DateTime                @map("transferred_at") @db.Timestamptz(6)
+  proofUrl         String                  @map("proof_url")
+  ocrData          Json?                   @map("ocr_data")
+  submittedData    Json?                   @map("submitted_data")
+  status           PaymentSubmissionStatus @default(PENDING_REVIEW)
+  rejectionReason  String?                 @map("rejection_reason") @db.Text
+  verifiedByUserId String?                 @map("verified_by_user_id") @db.Uuid
+  verifiedAt       DateTime?               @map("verified_at") @db.Timestamptz(6)
+  createdAt        DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  payment    Payment @relation(fields: [paymentId], references: [id])
+  verifiedBy User?   @relation("PaymentSubmissionVerifiedBy", fields: [verifiedByUserId], references: [id])
+
+  @@index([paymentId], map: "idx_payment_submissions_payment_id")
+  @@index([status], map: "idx_payment_submissions_status")
+  @@index([createdAt], map: "idx_payment_submissions_created_at")
+  @@index([verifiedByUserId], map: "idx_payment_submissions_verified_by")
+  @@map("payment_submissions")
+}
+
 // ============================
 // IDEMPOTENCY
 // ============================
-//
 
 model IdempotencyRecord {
   id          String            @id @default(uuid()) @db.Uuid
@@ -635,11 +656,9 @@ model IdempotencyRecord {
   @@map("idempotency_records")
 }
 
-//
 // ============================
 // SHIPMENT
 // ============================
-//
 
 model Shipment {
   id String @id @default(uuid()) @db.Uuid
@@ -672,11 +691,9 @@ model Shipment {
   @@map("shipments")
 }
 
-//
 // ============================
 // NOTIFICATION
 // ============================
-//
 
 model Notification {
   id      String           @id @default(uuid()) @db.Uuid

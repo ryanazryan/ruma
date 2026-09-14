@@ -18,12 +18,15 @@ import { CartModule } from './cart/cart.module';
 import { shippingConfig } from './config/shipping.config';
 import { ShippingModule } from './shipping/shipping.module';
 import { CheckoutModule } from './checkout/checkout.module';
+import { PaymentModule } from './payment/payment.module';
+import paymentConfig from './config/payment.config';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [cloudinaryConfig, shippingConfig],
+      load: [cloudinaryConfig, shippingConfig, paymentConfig],
     }),
     ThrottlerModule.forRoot([
       {
@@ -44,7 +47,9 @@ import { CheckoutModule } from './checkout/checkout.module';
     PricingModule,
     CartModule,
     ShippingModule,
-    CheckoutModule
+    CheckoutModule,
+    PaymentModule,
+    AdminModule,
   ],
   providers: [
     {
