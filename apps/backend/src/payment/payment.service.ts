@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -618,5 +619,576 @@ export class PaymentService {
       createdAt: submission.createdAt,
       updatedAt: submission.updatedAt,
     };
+  }
+
+  async rejectManualPaymentSubmission(
+    adminUserId: string,
+    submissionId: string,
+    rejectionReason: string,
+  ) {
+    const reason = rejectionReason.trim();
+
+    if (!reason) {
+      throw new BadRequestException('Rejection reason is required.');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const submission = await tx.paymentSubmission.findUnique({
+        where: {
+          id: submissionId,
+        },
+        include: {
+          payment: {
+            select: {
+              id: true,
+              method: true,
+              status: true,
+              expiresAt: true,
+              order: {
+                select: {
+                  id: true,
+                  status: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!submission) {
+        throw new NotFoundException('Payment submission not found.');
+      }
+
+      if (submission.payment.method !== 'MANUAL_BANK_TRANSFER') {
+        throw new BadRequestException(
+          'Payment submission is only available for manual bank transfer payments.',
+        );
+      }
+
+      /*
+       * Only PENDING_REVIEW can be rejected.
+       *
+       * This prevents duplicate rejection / approval.
+       */
+      const claim = await tx.paymentSubmission.updateMany({
+        where: {
+          id: submissionId,
+          status: 'PENDING_REVIEW',
+        },
+        data: {
+          status: 'REJECTED',
+          rejectionReason: reason,
+          verifiedByUserId: adminUserId,
+          verifiedAt: new Date(),
+        },
+      });
+
+      if (claim.count !== 1) {
+        throw new ConflictException(
+          'Payment submission has already been processed.',
+        );
+      }
+
+      /*
+       * Re-check payment/order state after claiming
+       * the submission.
+       *
+       * If any validation fails, the transaction rolls back,
+       * so the submission remains PENDING_REVIEW.
+       */
+      const currentPayment = await tx.payment.findUnique({
+        where: {
+          id: submission.payment.id,
+        },
+        select: {
+          id: true,
+          status: true,
+          expiresAt: true,
+          order: {
+            select: {
+              id: true,
+              status: true,
+            },
+          },
+        },
+      });
+
+      if (!currentPayment) {
+        throw new NotFoundException('Payment not found.');
+      }
+
+      if (currentPayment.status === 'PAID') {
+        throw new ConflictException('Payment has already been paid.');
+      }
+
+      if (currentPayment.status === 'EXPIRED') {
+        throw new ConflictException('Payment has expired.');
+      }
+
+      if (currentPayment.status !== 'PROCESSING') {
+        throw new ConflictException(
+          'Payment is not currently under manual verification.',
+        );
+      }
+
+      if (currentPayment.order.status !== 'PENDING_PAYMENT') {
+        throw new ConflictException('Order is no longer awaiting payment.');
+      }
+
+      if (new Date() >= currentPayment.expiresAt) {
+        throw new ConflictException('Payment has expired.');
+      }
+
+      const updatedSubmission = await tx.paymentSubmission.findUnique({
+        where: {
+          id: submissionId,
+        },
+        select: {
+          id: true,
+          paymentId: true,
+          status: true,
+          rejectionReason: true,
+          verifiedByUserId: true,
+          verifiedAt: true,
+        },
+      });
+
+      if (!updatedSubmission) {
+        throw new NotFoundException('Payment submission not found.');
+      }
+
+      return {
+        id: updatedSubmission.id,
+        paymentId: updatedSubmission.paymentId,
+        status: updatedSubmission.status,
+        rejectionReason: updatedSubmission.rejectionReason,
+        verifiedByUserId: updatedSubmission.verifiedByUserId,
+        verifiedAt: updatedSubmission.verifiedAt,
+      };
+    });
+  }
+
+  async approveManualPaymentSubmission(
+    adminUserId: string,
+    submissionId: string,
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      const submission = await tx.paymentSubmission.findUnique({
+        where: {
+          id: submissionId,
+        },
+        include: {
+          payment: {
+            select: {
+              id: true,
+              method: true,
+              status: true,
+              amount: true,
+              expiresAt: true,
+              order: {
+                select: {
+                  id: true,
+                  orderNumber: true,
+                  status: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!submission) {
+        throw new NotFoundException('Payment submission not found.');
+      }
+
+      if (submission.payment.method !== 'MANUAL_BANK_TRANSFER') {
+        throw new BadRequestException(
+          'Payment submission is only available for manual bank transfer payments.',
+        );
+      }
+
+      /*
+       * Atomically claim the submission.
+       *
+       * Only one concurrent request can change
+       * PENDING_REVIEW → APPROVED.
+       */
+      const claim = await tx.paymentSubmission.updateMany({
+        where: {
+          id: submissionId,
+          status: 'PENDING_REVIEW',
+        },
+        data: {
+          status: 'APPROVED',
+          verifiedByUserId: adminUserId,
+          verifiedAt: new Date(),
+          rejectionReason: null,
+        },
+      });
+
+      if (claim.count !== 1) {
+        throw new ConflictException(
+          'Payment submission has already been processed.',
+        );
+      }
+
+      /*
+       * Re-fetch current payment state after claiming
+       * the submission.
+       */
+      const currentPayment = await tx.payment.findUnique({
+        where: {
+          id: submission.payment.id,
+        },
+        select: {
+          id: true,
+          status: true,
+          amount: true,
+          expiresAt: true,
+          order: {
+            select: {
+              id: true,
+              orderNumber: true,
+              status: true,
+            },
+          },
+        },
+      });
+
+      if (!currentPayment) {
+        throw new NotFoundException('Payment not found.');
+      }
+
+      if (currentPayment.status === 'PAID') {
+        throw new ConflictException('Payment has already been paid.');
+      }
+
+      if (currentPayment.status === 'EXPIRED') {
+        throw new ConflictException('Payment has expired.');
+      }
+
+      if (currentPayment.status !== 'PROCESSING') {
+        throw new ConflictException(
+          'Payment is not currently under manual verification.',
+        );
+      }
+
+      if (currentPayment.order.status !== 'PENDING_PAYMENT') {
+        throw new ConflictException('Order is no longer awaiting payment.');
+      }
+
+      const now = new Date();
+
+      if (now >= currentPayment.expiresAt) {
+        throw new ConflictException('Payment has expired.');
+      }
+
+      /*
+       * Exact transfer amount validation.
+       */
+      if (submission.transferAmount !== currentPayment.amount) {
+        throw new BadRequestException(
+          'Transfer amount does not match the payment amount.',
+        );
+      }
+
+      /*
+       * ----------------------------------------------------
+       * 1. Mark payment as PAID
+       * ----------------------------------------------------
+       *
+       * Conditional update makes the transition atomic.
+       */
+      const paymentUpdate = await tx.payment.updateMany({
+        where: {
+          id: currentPayment.id,
+          status: 'PROCESSING',
+        },
+        data: {
+          status: 'PAID',
+          paidAt: now,
+        },
+      });
+
+      if (paymentUpdate.count !== 1) {
+        throw new ConflictException('Payment has already been processed.');
+      }
+
+      /*
+       * ----------------------------------------------------
+       * 2. Mark order as PAID
+       * ----------------------------------------------------
+       */
+      const orderUpdate = await tx.order.updateMany({
+        where: {
+          id: currentPayment.order.id,
+          status: 'PENDING_PAYMENT',
+        },
+        data: {
+          status: 'PAID',
+        },
+      });
+
+      if (orderUpdate.count !== 1) {
+        throw new ConflictException('Order is no longer awaiting payment.');
+      }
+
+      await tx.orderStatusHistory.create({
+        data: {
+          orderId: currentPayment.order.id,
+          fromStatus: 'PENDING_PAYMENT',
+          toStatus: 'PAID',
+          changedByUserId: adminUserId,
+          reason: 'Manual bank transfer payment approved.',
+        },
+      });
+
+      /*
+       * ----------------------------------------------------
+       * 3. Find active stock reservations
+       * ----------------------------------------------------
+       */
+      const reservations = await tx.stockReservation.findMany({
+        where: {
+          orderId: currentPayment.order.id,
+          status: 'RESERVED',
+        },
+        select: {
+          id: true,
+          productId: true,
+          quantity: true,
+        },
+      });
+
+      if (reservations.length === 0) {
+        throw new ConflictException(
+          'No active stock reservations found for this order.',
+        );
+      }
+
+      /*
+       * ----------------------------------------------------
+       * 4. Commit stock
+       * ----------------------------------------------------
+       */
+      for (const reservation of reservations) {
+        const inventory = await tx.inventory.findUnique({
+          where: {
+            productId: reservation.productId,
+          },
+          select: {
+            id: true,
+          },
+        });
+
+        if (!inventory) {
+          throw new BadRequestException(
+            `Inventory is not configured for product ${reservation.productId}.`,
+          );
+        }
+
+        const inventoryUpdate = await tx.inventory.updateMany({
+          where: {
+            id: inventory.id,
+            reservedQuantity: {
+              gte: reservation.quantity,
+            },
+          },
+          data: {
+            reservedQuantity: {
+              decrement: reservation.quantity,
+            },
+            committedQuantity: {
+              increment: reservation.quantity,
+            },
+          },
+        });
+
+        if (inventoryUpdate.count !== 1) {
+          throw new ConflictException(
+            `Unable to commit stock for product ${reservation.productId}.`,
+          );
+        }
+
+        const reservationUpdate = await tx.stockReservation.updateMany({
+          where: {
+            id: reservation.id,
+            status: 'RESERVED',
+          },
+          data: {
+            status: 'COMMITTED',
+            committedAt: now,
+          },
+        });
+
+        if (reservationUpdate.count !== 1) {
+          throw new ConflictException(
+            `Stock reservation for product ${reservation.productId} has already been processed.`,
+          );
+        }
+
+        await tx.stockMovement.create({
+          data: {
+            inventoryId: inventory.id,
+            type: 'COMMIT',
+            quantity: reservation.quantity,
+            referenceType: 'ORDER',
+            referenceId: currentPayment.order.id,
+            reason: 'Reserved stock committed after manual payment approval.',
+            createdByUserId: adminUserId,
+          },
+        });
+      }
+
+      /*
+       * ----------------------------------------------------
+       * 5. Return final state
+       * ----------------------------------------------------
+       */
+      return {
+        submission: {
+          id: submission.id,
+          status: 'APPROVED',
+          verifiedByUserId: adminUserId,
+          verifiedAt: now,
+        },
+
+        payment: {
+          id: currentPayment.id,
+          status: 'PAID',
+          paidAt: now,
+        },
+
+        order: {
+          id: currentPayment.order.id,
+          orderNumber: currentPayment.order.orderNumber,
+          status: 'PAID',
+        },
+      };
+    });
+  }
+
+  async getAdminPaymentSubmissions() {
+    const submissions = await this.prisma.paymentSubmission.findMany({
+      orderBy: {
+        createdAt: 'desc',
+      },
+      select: {
+        id: true,
+        paymentId: true,
+        senderBank: true,
+        senderName: true,
+        transferAmount: true,
+        transferredAt: true,
+        proofUrl: true,
+        ocrData: true,
+        submittedData: true,
+        status: true,
+        rejectionReason: true,
+        verifiedByUserId: true,
+        verifiedAt: true,
+        createdAt: true,
+        updatedAt: true,
+
+        payment: {
+          select: {
+            id: true,
+            method: true,
+            status: true,
+            amount: true,
+            expiresAt: true,
+            paidAt: true,
+
+            order: {
+              select: {
+                id: true,
+                orderNumber: true,
+                status: true,
+
+                user: {
+                  select: {
+                    id: true,
+                    fullName: true,
+                    email: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return {
+      submissions,
+    };
+  }
+
+  async getAdminPaymentSubmission(submissionId: string) {
+    const submission = await this.prisma.paymentSubmission.findUnique({
+      where: {
+        id: submissionId,
+      },
+      select: {
+        id: true,
+        paymentId: true,
+        senderBank: true,
+        senderName: true,
+        transferAmount: true,
+        transferredAt: true,
+        proofUrl: true,
+        ocrData: true,
+        submittedData: true,
+        status: true,
+        rejectionReason: true,
+        verifiedByUserId: true,
+        verifiedAt: true,
+        createdAt: true,
+        updatedAt: true,
+
+        payment: {
+          select: {
+            id: true,
+            method: true,
+            status: true,
+            amount: true,
+            expiresAt: true,
+            expiredAt: true,
+            paidAt: true,
+
+            order: {
+              select: {
+                id: true,
+                orderNumber: true,
+                status: true,
+                userId: true,
+
+                user: {
+                  select: {
+                    id: true,
+                    fullName: true,
+                    email: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        verifiedBy: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!submission) {
+      throw new NotFoundException('Payment submission not found.');
+    }
+
+    return submission;
   }
 }

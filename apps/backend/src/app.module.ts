@@ -20,6 +20,7 @@ import { ShippingModule } from './shipping/shipping.module';
 import { CheckoutModule } from './checkout/checkout.module';
 import { PaymentModule } from './payment/payment.module';
 import paymentConfig from './config/payment.config';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import paymentConfig from './config/payment.config';
     ShippingModule,
     CheckoutModule,
     PaymentModule,
+    AdminModule,
   ],
   providers: [
     {
