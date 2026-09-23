@@ -1,20 +1,20 @@
 'use client'
 
-import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 import type { ApiBrand } from '@/api/brands'
 import {
     getFilteredProducts,
+    getProducts,
     getSortedProducts,
     type ApiProduct,
     type ProductCategory,
+    type ProductFilterParams,
 } from '@/api/products'
+
 import { mapApiProduct } from '@/api/product-mapper'
 import type { ProductViewModel } from '@/types/product'
-
-import { useWishlist } from '@/components/providers/WishlistProvider'
 
 import {
     CatalogueFilters,
@@ -34,7 +34,9 @@ interface CatalogueClientProps {
     brands: ApiBrand[]
 }
 
-function mapProducts(products: ApiProduct[]): ProductViewModel[] {
+function mapProducts(
+    products: ApiProduct[],
+): ProductViewModel[] {
     return products.map(mapApiProduct)
 }
 
@@ -48,31 +50,232 @@ function sortProductsLocally(
 
     const sorted = [...products]
 
-    if (sort === 'price-asc') {
-        sorted.sort((a, b) => a.price - b.price)
-    }
+    switch (sort) {
+        case 'price-asc':
+            sorted.sort(
+                (a, b) => a.price - b.price,
+            )
+            break
 
-    if (sort === 'price-desc') {
-        sorted.sort((a, b) => b.price - a.price)
-    }
+        case 'price-desc':
+            sorted.sort(
+                (a, b) => b.price - a.price,
+            )
+            break
 
-    if (sort === 'newest') {
-        sorted.sort(
-            (a, b) =>
-                new Date(b.createdAt).getTime() -
-                new Date(a.createdAt).getTime(),
-        )
+        case 'newest':
+            sorted.sort(
+                (a, b) =>
+                    new Date(
+                        b.createdAt,
+                    ).getTime() -
+                    new Date(
+                        a.createdAt,
+                    ).getTime(),
+            )
+            break
+
+        default:
+            break
     }
 
     return sorted
 }
 
-function formatPrice(price: number) {
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        maximumFractionDigits: 0,
-    }).format(price)
+function getSortParams(
+    sort: CatalogueSort,
+) {
+    switch (sort) {
+        case 'newest':
+            return {
+                sortBy: 'newest' as const,
+                sortOrder: 'desc' as const,
+            }
+
+        case 'price-asc':
+            return {
+                sortBy: 'price' as const,
+                sortOrder: 'asc' as const,
+            }
+
+        case 'price-desc':
+            return {
+                sortBy: 'price' as const,
+                sortOrder: 'desc' as const,
+            }
+
+        default:
+            return null
+    }
+}
+
+/**
+ * Converts internal category UUID into
+ * the human-readable category slug used
+ * by the browser URL.
+ *
+ * Example:
+ * categoryId = "uuid..."
+ * category.slug = "living"
+ *
+ * Result:
+ * /catalogue?category=living
+ */
+function buildCatalogueUrl(
+    filters: CatalogueFilterState,
+    sort: CatalogueSort,
+    categories: ProductCategory[],
+): string {
+    const params = new URLSearchParams(
+        window.location.search,
+    )
+
+    /*
+     * Category
+     *
+     * Internal state/API:
+     *   UUID
+     *
+     * Browser URL:
+     *   slug
+     */
+    if (filters.categoryId) {
+        const category = categories.find(
+            (item) =>
+                item.id === filters.categoryId,
+        )
+
+        if (category?.slug) {
+            params.set(
+                'category',
+                category.slug,
+            )
+        } else {
+            params.delete('category')
+        }
+    } else {
+        params.delete('category')
+    }
+
+    /*
+     * Brand
+     *
+     * Keep UUID because backend filter
+     * expects brandId.
+     */
+    if (filters.brandId) {
+        params.set(
+            'brandId',
+            filters.brandId,
+        )
+    } else {
+        params.delete('brandId')
+    }
+
+    /*
+     * Minimum price
+     */
+    if (
+        filters.minPrice !== undefined
+    ) {
+        params.set(
+            'minPrice',
+            String(filters.minPrice),
+        )
+    } else {
+        params.delete('minPrice')
+    }
+
+    /*
+     * Maximum price
+     */
+    if (
+        filters.maxPrice !== undefined
+    ) {
+        params.set(
+            'maxPrice',
+            String(filters.maxPrice),
+        )
+    } else {
+        params.delete('maxPrice')
+    }
+
+    /*
+     * Sort
+     */
+    if (sort !== 'recommended') {
+        params.set('sort', sort)
+    } else {
+        params.delete('sort')
+    }
+
+    const queryString =
+        params.toString()
+
+    return queryString
+        ? `/catalogue?${queryString}`
+        : '/catalogue'
+}
+
+function getActivePriceLabel(
+    filters: CatalogueFilterState,
+) {
+    if (
+        filters.minPrice === undefined &&
+        filters.maxPrice === undefined
+    ) {
+        return null
+    }
+
+    if (
+        filters.minPrice === undefined &&
+        filters.maxPrice === 100000
+    ) {
+        return 'Under Rp100.000'
+    }
+
+    if (
+        filters.minPrice === 100000 &&
+        filters.maxPrice === 200000
+    ) {
+        return 'Rp100.000 – Rp200.000'
+    }
+
+    if (
+        filters.minPrice === 200000 &&
+        filters.maxPrice === undefined
+    ) {
+        return 'Over Rp200.000'
+    }
+
+    if (
+        filters.minPrice !== undefined &&
+        filters.maxPrice !== undefined
+    ) {
+        return `Rp${filters.minPrice.toLocaleString(
+            'id-ID',
+        )} – Rp${filters.maxPrice.toLocaleString(
+            'id-ID',
+        )}`
+    }
+
+    if (
+        filters.minPrice !== undefined
+    ) {
+        return `From Rp${filters.minPrice.toLocaleString(
+            'id-ID',
+        )}`
+    }
+
+    if (
+        filters.maxPrice !== undefined
+    ) {
+        return `Up to Rp${filters.maxPrice.toLocaleString(
+            'id-ID',
+        )}`
+    }
+
+    return 'Price'
 }
 
 export function CatalogueClient({
@@ -83,727 +286,740 @@ export function CatalogueClient({
     const router = useRouter()
     const searchParams = useSearchParams()
 
-    const {
-        isProductWishlisted,
-    } = useWishlist()
-
     const [products, setProducts] =
-        useState<ProductViewModel[]>(initialProducts)
+        useState<ProductViewModel[]>(
+            initialProducts,
+        )
 
     const [filters, setFilters] =
-        useState<CatalogueFilterState>({})
+        useState<CatalogueFilterState>(
+            {},
+        )
 
     const [sort, setSort] =
-        useState<CatalogueSort>('recommended')
+        useState<CatalogueSort>(
+            'recommended',
+        )
 
     const [view, setView] =
-        useState<'grid' | 'list'>('grid')
+        useState<'grid' | 'list'>(
+            'grid',
+        )
 
-    const [isLoading, setIsLoading] =
+    const [loading, setLoading] =
         useState(false)
 
     const [error, setError] =
         useState<string | null>(null)
 
-    const categoryParam = searchParams.get('category')?.trim().toLowerCase() ?? ''
-    const sortParam = searchParams.get('sort')?.trim().toLowerCase() ?? ''
+    const [
+        mobileFilterOpen,
+        setMobileFilterOpen,
+    ] = useState(false)
 
+    /*
+     * Prevent stale client responses
+     * from overwriting newer state.
+     */
+    const requestIdRef =
+        useRef(0)
+
+    /*
+     * ============================================================
+     * URL PARAMETERS
+     * ============================================================
+     */
+
+    const categoryParam =
+        searchParams
+            .get('category')
+            ?.trim()
+            .toLowerCase() ?? ''
+
+    const brandParam =
+        searchParams
+            .get('brandId')
+            ?.trim() ?? ''
+
+    const minPriceParam =
+        searchParams.get('minPrice')
+
+    const maxPriceParam =
+        searchParams.get('maxPrice')
+
+    const sortParam =
+        searchParams
+            .get('sort')
+            ?.trim()
+            .toLowerCase() ?? ''
+
+    /*
+     * ============================================================
+     * URL → INTERNAL FILTER STATE
+     * ============================================================
+     *
+     * URL:
+     * /catalogue?category=living
+     *
+     * becomes:
+     * filters.categoryId = UUID
+     *
+     * This makes CatalogueFilters recognize
+     * the correct category checkbox.
+     */
     useEffect(() => {
-        const selectedCategory = categoryParam
-            ? categories.find(
-                (category) =>
-                    category.slug === categoryParam,
-            )
-            : undefined
+        const selectedCategory =
+            categoryParam
+                ? categories.find(
+                    (category) =>
+                        category.slug
+                            ?.trim()
+                            .toLowerCase() ===
+                            categoryParam ||
+                        category.id ===
+                            categoryParam,
+                )
+                : undefined
 
+        const parsedMinPrice =
+            minPriceParam !== null &&
+            minPriceParam !== ''
+                ? Number(minPriceParam)
+                : undefined
+
+        const parsedMaxPrice =
+            maxPriceParam !== null &&
+            maxPriceParam !== ''
+                ? Number(maxPriceParam)
+                : undefined
+
+        /*
+         * Server page is the source of truth
+         * for initial products.
+         */
         setProducts(initialProducts)
 
         setFilters({
-            categoryId: selectedCategory?.id,
+            ...(selectedCategory
+                ? {
+                    categoryId:
+                        selectedCategory.id,
+                }
+                : {}),
+            ...(brandParam
+                ? {
+                    brandId:
+                        brandParam,
+                }
+                : {}),
+            ...(parsedMinPrice !==
+                undefined &&
+            !Number.isNaN(
+                parsedMinPrice,
+            )
+                ? {
+                    minPrice:
+                        parsedMinPrice,
+                }
+                : {}),
+            ...(parsedMaxPrice !==
+                undefined &&
+            !Number.isNaN(
+                parsedMaxPrice,
+            )
+                ? {
+                    maxPrice:
+                        parsedMaxPrice,
+                }
+                : {}),
         })
 
         setSort(
-            sortParam === 'newest'
-                ? 'newest'
+            sortParam === 'newest' ||
+            sortParam === 'price-asc' ||
+            sortParam === 'price-desc'
+                ? sortParam
                 : 'recommended',
         )
     }, [
         initialProducts,
         categories,
         categoryParam,
+        brandParam,
+        minPriceParam,
+        maxPriceParam,
         sortParam,
     ])
 
+    /*
+     * ============================================================
+     * MOBILE BODY SCROLL LOCK
+     * ============================================================
+     */
+
+    useEffect(() => {
+        if (!mobileFilterOpen) {
+            document.body.style.overflow =
+                ''
+            return
+        }
+
+        document.body.style.overflow =
+            'hidden'
+
+        return () => {
+            document.body.style.overflow =
+                ''
+        }
+    }, [mobileFilterOpen])
+
+    /*
+     * ============================================================
+     * ACTIVE FILTERS
+     * ============================================================
+     */
+
     const hasActiveFilters =
-        Boolean(filters.brandId) ||
-        Boolean(filters.categoryId) ||
-        filters.minPrice !== undefined ||
-        filters.maxPrice !== undefined
-
-    const activeCategoryLabel = getCategoryLabel(
-        categories,
-        filters.categoryId,
-    )
-
-    const activeBrandLabel = getBrandLabel(
-        brands,
-        filters.brandId,
-    )
-
-    const activePriceLabel = getActivePriceLabel(filters)
-
-    const activeFilterCount = [
-        activeCategoryLabel,
-        activeBrandLabel,
-        activePriceLabel,
-    ].filter(Boolean).length
-
-    const visibleProducts = useMemo(() => {
-        if (hasActiveFilters) {
-            return sortProductsLocally(products, sort)
-        }
-
-        return sort === 'recommended'
-            ? products
-            : sortProductsLocally(products, sort)
-    }, [products, sort, hasActiveFilters])
-
-    async function handleFilterChange(
-        nextFilters: CatalogueFilterState,
-    ) {
-        setFilters(nextFilters)
-        setSort('recommended')
-        setError(null)
-
-        const params = new URLSearchParams(
-            searchParams.toString(),
-        )
-
-        params.delete('sort')
-
-        if (nextFilters.categoryId) {
-            const selectedCategory = categories.find(
-                (category) =>
-                    category.id === nextFilters.categoryId,
+        useMemo(() => {
+            return Boolean(
+                filters.categoryId ||
+                filters.brandId ||
+                filters.minPrice !==
+                    undefined ||
+                filters.maxPrice !==
+                    undefined,
             )
+        }, [filters])
 
-            if (selectedCategory) {
-                params.set('category', selectedCategory.slug)
-            }
-        } else {
-            params.delete('category')
-        }
+    const activeFilterLabels =
+        useMemo(() => {
+            const labels: Array<{
+                key: keyof CatalogueFilterState
+                label: string
+            }> = []
 
-        if (nextFilters.brandId) {
-            params.set('brandId', nextFilters.brandId)
-        } else {
-            params.delete('brandId')
-        }
+            if (filters.categoryId) {
+                const category =
+                    categories.find(
+                        (item) =>
+                            item.id ===
+                            filters.categoryId,
+                    )
 
-        if (nextFilters.minPrice !== undefined) {
-            params.set(
-                'minPrice',
-                String(nextFilters.minPrice),
-            )
-        } else {
-            params.delete('minPrice')
-        }
-
-        if (nextFilters.maxPrice !== undefined) {
-            params.set(
-                'maxPrice',
-                String(nextFilters.maxPrice),
-            )
-        } else {
-            params.delete('maxPrice')
-        }
-
-        const query = params.toString()
-
-        router.replace(
-            query ? `/catalogue?${query}` : '/catalogue',
-        )
-
-        const hasFilters =
-            Boolean(nextFilters.brandId) ||
-            Boolean(nextFilters.categoryId) ||
-            nextFilters.minPrice !== undefined ||
-            nextFilters.maxPrice !== undefined
-
-        if (!hasFilters) {
-            setProducts(initialProducts)
-            return
-        }
-
-        setIsLoading(true)
-
-        try {
-            const filteredProducts =
-                await getFilteredProducts({
-                    brandId: nextFilters.brandId,
-                    categoryId: nextFilters.categoryId,
-                    minPrice: nextFilters.minPrice,
-                    maxPrice: nextFilters.maxPrice,
+                labels.push({
+                    key: 'categoryId',
+                    label:
+                        category?.name ??
+                        'Category',
                 })
-
-            setProducts(mapProducts(filteredProducts))
-        } catch {
-            setError(
-                'Unable to load filtered products. Please try again.',
-            )
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    async function handleSortChange(
-        nextSort: CatalogueSort,
-    ) {
-        setSort(nextSort)
-        setError(null)
-
-        if (nextSort === 'recommended') {
-            if (!hasActiveFilters) {
-                setProducts(initialProducts)
             }
 
-            return
-        }
+            if (filters.brandId) {
+                const brand =
+                    brands.find(
+                        (item) =>
+                            item.id ===
+                            filters.brandId,
+                    )
 
-        if (hasActiveFilters) {
-            setProducts((current) =>
-                sortProductsLocally(
-                    current,
-                    nextSort,
-                ),
-            )
+                labels.push({
+                    key: 'brandId',
+                    label:
+                        brand?.name ??
+                        'Brand',
+                })
+            }
 
-            return
-        }
+            if (
+                filters.minPrice !==
+                    undefined ||
+                filters.maxPrice !==
+                    undefined
+            ) {
+                labels.push({
+                    key: 'minPrice',
+                    label:
+                        getActivePriceLabel(
+                            filters,
+                        ) ?? 'Price',
+                })
+            }
 
-        setIsLoading(true)
+            return labels
+        }, [
+            filters,
+            categories,
+            brands,
+        ])
+
+    const activeFilterCount =
+        activeFilterLabels.length
+
+    /*
+     * ============================================================
+     * FETCH PRODUCTS
+     * ============================================================
+     *
+     * This is retained for direct client-side
+     * filter fetching if needed.
+     *
+     * However, filter/sort handlers below use
+     * router.replace() as the primary source
+     * of URL state.
+     */
+    const fetchProducts = async (
+        nextFilters: CatalogueFilterState,
+        nextSort: CatalogueSort,
+    ) => {
+        const requestId =
+            ++requestIdRef.current
+
+        setLoading(true)
+        setError(null)
 
         try {
-            let sortedProducts: ApiProduct[]
+            const hasFilters =
+                Boolean(
+                    nextFilters.categoryId,
+                ) ||
+                Boolean(
+                    nextFilters.brandId,
+                ) ||
+                nextFilters.minPrice !==
+                    undefined ||
+                nextFilters.maxPrice !==
+                    undefined
 
-            if (nextSort === 'newest') {
-                sortedProducts =
-                    await getSortedProducts(
-                        'newest',
-                        'desc',
+            let response: ApiProduct[]
+
+            if (!hasFilters) {
+                const sortParams =
+                    getSortParams(
+                        nextSort,
                     )
-            } else if (nextSort === 'price-asc') {
-                sortedProducts =
-                    await getSortedProducts(
-                        'price',
-                        'asc',
-                    )
+
+                if (
+                    nextSort ===
+                        'recommended' ||
+                    !sortParams
+                ) {
+                    response =
+                        await getProducts()
+                } else {
+                    response =
+                        await getSortedProducts(
+                            sortParams.sortBy,
+                            sortParams.sortOrder,
+                        )
+                }
             } else {
-                sortedProducts =
-                    await getSortedProducts(
-                        'price',
-                        'desc',
+                const filterParams: ProductFilterParams =
+                    {
+                        categoryId:
+                            nextFilters.categoryId,
+                        brandId:
+                            nextFilters.brandId,
+                        minPrice:
+                            nextFilters.minPrice,
+                        maxPrice:
+                            nextFilters.maxPrice,
+                    }
+
+                response =
+                    await getFilteredProducts(
+                        filterParams,
+                    )
+            }
+
+            if (
+                requestId !==
+                requestIdRef.current
+            ) {
+                return
+            }
+
+            let mappedProducts =
+                mapProducts(response)
+
+            if (
+                hasFilters &&
+                nextSort !==
+                    'recommended'
+            ) {
+                mappedProducts =
+                    sortProductsLocally(
+                        mappedProducts,
+                        nextSort,
                     )
             }
 
             setProducts(
-                mapProducts(sortedProducts),
+                mappedProducts,
             )
-        } catch {
+        } catch (err) {
+            if (
+                requestId !==
+                requestIdRef.current
+            ) {
+                return
+            }
+
+            console.error(
+                'Failed to load catalogue products:',
+                err,
+            )
+
             setError(
-                'Unable to sort products. Please try again.',
+                'Failed to load products. Please try again.',
             )
         } finally {
-            setIsLoading(false)
+            if (
+                requestId ===
+                requestIdRef.current
+            ) {
+                setLoading(false)
+            }
         }
     }
 
-    function handleViewChange(
-        nextView: 'grid' | 'list',
-    ) {
-        setView(nextView)
+    /*
+     * ============================================================
+     * FILTER CHANGE
+     * ============================================================
+     *
+     * IMPORTANT:
+     *
+     * Do NOT call fetchProducts() here.
+     *
+     * router.replace()
+     *     ↓
+     * server page
+     *     ↓
+     * API
+     *     ↓
+     * initialProducts
+     *
+     * This prevents duplicate requests.
+     */
+    const handleFilterChange = (
+        nextFilters: CatalogueFilterState,
+    ) => {
+        setFilters(
+            nextFilters,
+        )
+
+        setError(null)
+
+        /*
+         * Changing filter resets sorting.
+         */
+        const nextSort =
+            'recommended'
+
+        setSort(nextSort)
+
+        /*
+         * UUID → slug for URL.
+         */
+        const nextUrl =
+            buildCatalogueUrl(
+                nextFilters,
+                nextSort,
+                categories,
+            )
+
+        router.replace(
+            nextUrl,
+            {
+                scroll: false,
+            },
+        )
+
+        if (mobileFilterOpen) {
+            setMobileFilterOpen(
+                false,
+            )
+        }
     }
 
-    function removeCategoryFilter() {
-        handleFilterChange({
+    /*
+     * ============================================================
+     * SORT CHANGE
+     * ============================================================
+     */
+    const handleSortChange = (
+        nextSort: CatalogueSort,
+    ) => {
+        setSort(nextSort)
+        setError(null)
+
+        const nextUrl =
+            buildCatalogueUrl(
+                filters,
+                nextSort,
+                categories,
+            )
+
+        router.replace(
+            nextUrl,
+            {
+                scroll: false,
+            },
+        )
+    }
+
+    /*
+     * ============================================================
+     * REMOVE FILTER
+     * ============================================================
+     */
+    const handleRemoveFilter = (
+        key: keyof CatalogueFilterState,
+    ) => {
+        const nextFilters = {
             ...filters,
-            categoryId: undefined,
-        })
+        }
+
+        if (
+            key === 'minPrice' ||
+            key === 'maxPrice'
+        ) {
+            delete nextFilters.minPrice
+            delete nextFilters.maxPrice
+        } else {
+            delete nextFilters[key]
+        }
+
+        handleFilterChange(
+            nextFilters,
+        )
     }
 
-    function removeBrandFilter() {
-        handleFilterChange({
-            ...filters,
-            brandId: undefined,
-        })
-    }
-
-    function removePriceFilter() {
-        handleFilterChange({
-            ...filters,
-            minPrice: undefined,
-            maxPrice: undefined,
-        })
-    }
-
-    function clearFilters() {
+    /*
+     * ============================================================
+     * CLEAR FILTERS
+     * ============================================================
+     */
+    const handleClearFilters = () => {
         handleFilterChange({})
     }
 
-    function getActivePriceLabel(
-        currentFilters: CatalogueFilterState,
-    ) {
-        if (
-            currentFilters.minPrice === undefined &&
-            currentFilters.maxPrice === undefined
-        ) {
-            return null
-        }
+    /*
+     * ============================================================
+     * VISIBLE PRODUCTS
+     * ============================================================
+     */
+    const visibleProducts =
+        useMemo(() => {
+            return sortProductsLocally(
+                products,
+                sort,
+            )
+        }, [
+            products,
+            sort,
+        ])
 
-        if (currentFilters.maxPrice === 100000) {
-            return 'Under Rp100.000'
-        }
-
-        if (
-            currentFilters.minPrice === 100000 &&
-            currentFilters.maxPrice === 200000
-        ) {
-            return 'Rp100.000 – Rp200.000'
-        }
-
-        if (
-            currentFilters.minPrice === 200000 &&
-            currentFilters.maxPrice === undefined
-        ) {
-            return 'Over Rp200.000'
-        }
-
-        return 'Price'
-    }
-
-    function getCategoryLabel(
-        currentCategories: ProductCategory[],
-        categoryId?: string,
-    ) {
-        if (!categoryId) {
-            return null
-        }
-
-        return (
-            currentCategories.find(
-                (category) =>
-                    category.id === categoryId,
-            )?.name ?? 'Category'
-        )
-    }
-
-    function getBrandLabel(
-        currentBrands: ApiBrand[],
-        brandId?: string,
-    ) {
-        if (!brandId) {
-            return null
-        }
-
-        return (
-            currentBrands.find(
-                (brand) => brand.id === brandId,
-            )?.name ?? 'Brand'
-        )
-    }
-
+    /*
+     * ============================================================
+     * RENDER
+     * ============================================================
+     */
     return (
-        <main className="min-h-screen bg-canvas">
-            <div className="mx-auto w-full max-w-7xl px-5 py-10 sm:px-8 lg:px-10">
-                {/* Page heading */}
-                <header className="mb-8">
-                    <h1
-                        className="text-3xl font-semibold tracking-tight text-ink sm:text-4xl"
-                        style={{
-                            fontFamily:
-                                'var(--font-fraunces), Georgia, serif',
-                        }}
-                    >
-                        All Products
+        <main className="min-h-screen bg-background">
+            <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
+                {/* Heading */}
+                <div className="mb-6 lg:mb-8">
+                    <h1 className="font-serif text-3xl tracking-tight text-foreground sm:text-4xl">
+                        Catalogue
                     </h1>
-                </header>
 
-                <div className="relative">
-                    {/* Error */}
-                    {error && (
-                        <div className="mb-6 flex items-center justify-between border border-error/20 bg-error-tint px-4 py-3">
-                            <p className="text-sm text-error">
-                                {error}
-                            </p>
+                    <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+                        Discover products from our collection.
+                    </p>
+                </div>
 
-                            <button
-                                type="button"
-                                onClick={() => setError(null)}
-                                className="text-xs font-medium text-error hover:underline"
-                            >
-                                Dismiss
-                            </button>
-                        </div>
-                    )}
+                {/* Error */}
+                {error && (
+                    <div className="mb-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        {error}
+                    </div>
+                )}
 
-                    <div className="flex items-start gap-8">
-                        {/* Filters */}
-                        <CatalogueFilters
-                            categories={categories}
-                            brands={brands}
-                            value={filters}
-                            onChange={handleFilterChange}
+                <div className="flex items-start gap-6 lg:gap-8">
+                    {/* Desktop / Mobile Filters */}
+                    <CatalogueFilters
+                        categories={
+                            categories
+                        }
+                        brands={brands}
+                        value={filters}
+                        onChange={
+                            handleFilterChange
+                        }
+                        mobileOpen={
+                            mobileFilterOpen
+                        }
+                        onMobileClose={() =>
+                            setMobileFilterOpen(
+                                false,
+                            )
+                        }
+                        resultCount={
+                            products.length
+                        }
+                    />
+
+                    {/* Catalogue */}
+                    <section className="min-w-0 flex-1">
+                        <CatalogueToolbar
+                            productCount={
+                                visibleProducts.length
+                            }
+                            sort={sort}
+                            onSortChange={
+                                handleSortChange
+                            }
+                            view={view}
+                            onViewChange={
+                                setView
+                            }
+                            onFilterClick={() =>
+                                setMobileFilterOpen(
+                                    true,
+                                )
+                            }
+                            activeFilterCount={
+                                activeFilterCount
+                            }
                         />
 
-                        {/* Product content */}
-                        <section className="min-w-0 flex-1">
-                            <CatalogueToolbar
-                                productCount={
-                                    visibleProducts.length
-                                }
-                                sort={sort}
-                                onSortChange={
-                                    handleSortChange
-                                }
-                                view={view}
-                                onViewChange={
-                                    handleViewChange
-                                }
-                            />
+                        {/* Active filters */}
+                        {hasActiveFilters && (
+                            <div className="flex flex-wrap items-center gap-2 border-b border-line py-4">
+                                <span className="mr-1 text-xs font-medium text-muted-foreground">
+                                    Filters:
+                                </span>
 
-                            {/* Active filters */}
-                            {hasActiveFilters && (
-                                <div className="flex flex-wrap items-center gap-2 border-b border-line py-4">
-                                    <span className="mr-1 text-[10px] font-medium uppercase tracking-[0.14em] text-ink-faint">
-                                        Filters:
-                                    </span>
-
-                                    {activeCategoryLabel && (
+                                {activeFilterLabels.map(
+                                    (
+                                        filter,
+                                    ) => (
                                         <button
+                                            key={`${filter.key}-${filter.label}`}
                                             type="button"
-                                            onClick={
-                                                removeCategoryFilter
+                                            onClick={() =>
+                                                handleRemoveFilter(
+                                                    filter.key,
+                                                )
                                             }
-                                            className="
-                                                inline-flex
-                                                items-center
-                                                gap-2
-                                                rounded-full
-                                                bg-brand/10
-                                                px-3.5
-                                                py-2
-                                                text-xs
-                                                font-medium
-                                                text-brand
-                                                transition-colors
-                                                hover:bg-brand/15
-                                            "
+                                            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1.5 text-xs text-foreground transition-colors hover:bg-muted"
                                         >
-                                            <span>
-                                                {
-                                                    activeCategoryLabel
-                                                }
-                                            </span>
+                                            {
+                                                filter.label
+                                            }
 
                                             <span
-                                                className="text-brand/60"
                                                 aria-hidden="true"
+                                                className="text-muted-foreground"
                                             >
                                                 ×
                                             </span>
                                         </button>
-                                    )}
+                                    ),
+                                )}
 
-                                    {activeBrandLabel && (
+                                <button
+                                    type="button"
+                                    onClick={
+                                        handleClearFilters
+                                    }
+                                    className="ml-1 text-xs font-medium text-brand transition-colors hover:underline"
+                                >
+                                    Clear all
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Loading */}
+                        {loading && (
+                            <div className="flex items-center justify-center py-16">
+                                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-line border-t-brand" />
+                                    Loading products...
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Empty */}
+                        {!loading &&
+                            visibleProducts.length ===
+                                0 && (
+                                <div className="flex flex-col items-center justify-center py-20 text-center">
+                                    <div className="mb-4 text-4xl">
+                                        ○
+                                    </div>
+
+                                    <h2 className="text-lg font-medium text-foreground">
+                                        No products found
+                                    </h2>
+
+                                    <p className="mt-2 max-w-sm text-sm text-muted-foreground">
+                                        Try adjusting your filters or clearing them to see more products.
+                                    </p>
+
+                                    {hasActiveFilters && (
                                         <button
                                             type="button"
                                             onClick={
-                                                removeBrandFilter
+                                                handleClearFilters
                                             }
-                                            className="
-                                                inline-flex
-                                                items-center
-                                                gap-2
-                                                rounded-full
-                                                bg-brand/10
-                                                px-3.5
-                                                py-2
-                                                text-xs
-                                                font-medium
-                                                text-brand
-                                                transition-colors
-                                                hover:bg-brand/15
-                                            "
+                                            className="mt-5 rounded-md border border-line bg-white px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
                                         >
-                                            <span>
-                                                {
-                                                    activeBrandLabel
-                                                }
-                                            </span>
-
-                                            <span
-                                                className="text-brand/60"
-                                                aria-hidden="true"
-                                            >
-                                                ×
-                                            </span>
-                                        </button>
-                                    )}
-
-                                    {activePriceLabel && (
-                                        <button
-                                            type="button"
-                                            onClick={
-                                                removePriceFilter
-                                            }
-                                            className="
-                                                inline-flex
-                                                items-center
-                                                gap-2
-                                                rounded-full
-                                                bg-brand/10
-                                                px-3.5
-                                                py-2
-                                                text-xs
-                                                font-medium
-                                                text-brand
-                                                transition-colors
-                                                hover:bg-brand/15
-                                            "
-                                        >
-                                            <span>
-                                                {
-                                                    activePriceLabel
-                                                }
-                                            </span>
-
-                                            <span
-                                                className="text-brand/60"
-                                                aria-hidden="true"
-                                            >
-                                                ×
-                                            </span>
-                                        </button>
-                                    )}
-
-                                    {activeFilterCount > 0 && (
-                                        <button
-                                            type="button"
-                                            onClick={clearFilters}
-                                            className="
-                                                ml-1
-                                                text-xs
-                                                font-medium
-                                                text-brand
-                                                transition-colors
-                                                hover:text-brand-dark
-                                            "
-                                        >
-                                            Clear All
+                                            Clear filters
                                         </button>
                                     )}
                                 </div>
                             )}
 
-                            {/* Loading */}
-                            {isLoading ? (
-                                <div className="flex min-h-105 items-center justify-center">
-                                    <div className="flex items-center gap-3 text-sm text-ink-muted">
-                                        <span
-                                            className="
-                                                h-4
-                                                w-4
-                                                animate-spin
-                                                rounded-full
-                                                border-2
-                                                border-line
-                                                border-t-brand
-                                            "
-                                            aria-hidden="true"
-                                        />
-
-                                        Loading products...
-                                    </div>
-                                </div>
-                            ) : visibleProducts.length === 0 ? (
-                                /* Empty state */
-                                <div className="flex min-h-105 items-center justify-center">
-                                    <div className="max-w-sm text-center">
-                                        <h2
-                                            className="text-2xl font-semibold tracking-tight text-ink"
-                                            style={{
-                                                fontFamily:
-                                                    'var(--font-fraunces), Georgia, serif',
-                                            }}
-                                        >
-                                            No products found
-                                        </h2>
-
-                                        <p className="mt-3 text-sm leading-relaxed text-ink-muted">
-                                            Try changing your
-                                            filters to find
-                                            other products.
-                                        </p>
-
-                                        {hasActiveFilters && (
-                                            <button
-                                                type="button"
-                                                onClick={
-                                                    clearFilters
-                                                }
-                                                className="
-                                                    mt-6
-                                                    text-xs
-                                                    font-medium
-                                                    uppercase
-                                                    tracking-[0.16em]
-                                                    text-brand
-                                                    transition-colors
-                                                    hover:text-brand-dark
-                                                "
-                                            >
-                                                Clear Filters
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            ) : view === 'grid' ? (
-                                /* Grid view */
-                                <div className="mt-5 grid grid-cols-2 gap-x-4 gap-y-12 sm:gap-x-6 lg:grid-cols-3">
+                        {/* Products */}
+                        {!loading &&
+                            visibleProducts.length >
+                                0 && (
+                                <div
+                                    className={
+                                        view ===
+                                        'grid'
+                                            ? 'grid grid-cols-2 gap-x-4 gap-y-8 pt-6 sm:grid-cols-2 sm:gap-x-6 lg:grid-cols-3 xl:grid-cols-4'
+                                            : 'flex flex-col divide-y divide-line pt-2'
+                                    }
+                                >
                                     {visibleProducts.map(
-                                        (product) => (
-                                            <ProductCard
-                                                key={product.id}
-                                                product={product}
-                                                onProductClick={() =>
-                                                    router.replace(`/product/${product.slug}`)
+                                        (
+                                            product,
+                                        ) => (
+                                            <div
+                                                key={
+                                                    product.id
                                                 }
-                                            />
+                                                className={
+                                                    view ===
+                                                    'list'
+                                                        ? 'py-5 first:pt-3'
+                                                        : ''
+                                                }
+                                            >
+                                                <ProductCard
+                                                    product={
+                                                        product
+                                                    }
+                                                />
+                                            </div>
                                         ),
                                     )}
                                 </div>
-                            ) : (
-                                /* List view */
-                                <div className="mt-5 space-y-4">
-                                    {visibleProducts.map(
-                                        (product) => {
-                                            const saved =
-                                                isProductWishlisted(
-                                                    product.id,
-                                                )
-
-                                            return (
-                                                <article
-                                                    key={
-                                                        product.id
-                                                    }
-                                                    className="
-                                                        flex
-                                                        gap-5
-                                                        rounded-sm
-                                                        border
-                                                        border-line
-                                                        bg-white
-                                                        p-4
-                                                        transition-shadow
-                                                        hover:shadow-sm
-                                                    "
-                                                >
-                                                    {/* Product image */}
-                                                    <div className="group relative h-36 w-36 shrink-0 overflow-hidden rounded-sm bg-muted-surface">
-                                                        <Link
-                                                            href={`/product/${product.slug}`}
-                                                            aria-label={`View ${product.name}`}
-                                                            className="block h-full w-full"
-                                                        >
-                                                            {product.photo ? (
-                                                                <img
-                                                                    src={
-                                                                        product.photo
-                                                                    }
-                                                                    alt={
-                                                                        product.name
-                                                                    }
-                                                                    loading="lazy"
-                                                                    className="
-                                                                        h-full
-                                                                        w-full
-                                                                        object-cover
-                                                                        transition-transform
-                                                                        duration-700
-                                                                        ease-out
-                                                                        group-hover:scale-[1.04]
-                                                                    "
-                                                                />
-                                                            ) : (
-                                                                <div className="flex h-full w-full items-center justify-center text-xs text-ink-faint">
-                                                                    No image
-                                                                </div>
-                                                            )}
-                                                        </Link>
-                                                    </div>
-
-                                                    {/* Product information */}
-                                                    <div className="flex min-w-0 flex-1 flex-col justify-center">
-                                                        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-brand">
-                                                            {
-                                                                product.brand
-                                                            }
-                                                        </p>
-
-                                                        <Link
-                                                            href={`/product/${product.slug}`}
-                                                            className="
-                                                                mt-1
-                                                                text-lg
-                                                                font-medium
-                                                                leading-snug
-                                                                text-ink
-                                                                transition-colors
-                                                                hover:text-brand
-                                                            "
-                                                        >
-                                                            {
-                                                                product.name
-                                                            }
-                                                        </Link>
-
-                                                        {product.category && (
-                                                            <p className="mt-2 text-sm text-ink-muted">
-                                                                {
-                                                                    product.category
-                                                                }
-                                                            </p>
-                                                        )}
-
-                                                        <p className="mt-4 text-sm font-semibold text-ink">
-                                                            {formatPrice(
-                                                                product.price,
-                                                            )}
-                                                        </p>
-
-                                                        {product.description && (
-                                                            <p className="mt-2 line-clamp-2 max-w-3xl text-sm leading-relaxed text-ink-muted">
-                                                                {
-                                                                    product.description
-                                                                }
-                                                            </p>
-                                                        )}
-
-                                                        {saved && (
-                                                            <span className="sr-only">
-                                                                Saved to wishlist
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </article>
-                                            )
-                                        },
-                                    )}
-                                </div>
                             )}
-                        </section>
-                    </div>
+                    </section>
                 </div>
             </div>
         </main>

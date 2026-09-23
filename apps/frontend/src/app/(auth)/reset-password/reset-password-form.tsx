@@ -4,13 +4,13 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-import AuthLayout from '../../components/auth/AuthLayout';
-import PasswordInput from '../../components/ui/password-input';
-import Button from '../../components/ui/button';
-import Alert from '../../components/ui/alert';
-import FormHeading from '../../components/ui/form-heading';
-import StatusCard from '../../components/ui/status-card';
-import { resetPassword } from '../../lib/api';
+import AuthLayout from '@/components/auth/AuthLayout'
+import PasswordInput from '@/components/ui/password-input'
+import Button from '@/components/ui/button'
+import Alert from '@/components/ui/alert'
+import FormHeading from '@/components/ui/form-heading'
+import StatusCard from '@/components/ui/status-card'
+import { resetPassword } from '@/lib/api'
 
 type PageState = 'idle' | 'loading' | 'error' | 'success';
 

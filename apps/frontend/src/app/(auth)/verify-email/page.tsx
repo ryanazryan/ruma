@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
-import { verifyEmail } from '../../lib/api';
+import { verifyEmail } from '@/lib/api'
 
 type VerificationState = 'loading' | 'success' | 'error';
 

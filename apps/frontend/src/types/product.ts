@@ -1,5 +1,3 @@
-import type { ApiProduct } from '@/api/products'
-
 export interface ProductViewModel {
   id: string
   sku: string
@@ -16,7 +14,7 @@ export interface ProductViewModel {
   category: string
 
   supplierId: string
-supplier: string
+  supplier: string
 
   photo: string | null
   images: string[]

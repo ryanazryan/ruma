@@ -3,14 +3,14 @@
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import AuthLayout from '../../components/auth/AuthLayout';
-import Input from '../../components/ui/input';
-import PasswordInput from '../../components/ui/password-input';
-import Button from '../../components/ui/button';
-import Alert from '../../components/ui/alert';
-import FormHeading from '../../components/ui/form-heading';
-import StatusCard from '../../components/ui/status-card';
-import { loginUser } from '../../lib/api';
+import AuthLayout from '../../../components/auth/AuthLayout';
+import Input from '../../../components/ui/input';
+import PasswordInput from '../../../components/ui/password-input';
+import Button from '../../../components/ui/button';
+import Alert from '../../../components/ui/alert';
+import FormHeading from '../../../components/ui/form-heading';
+import StatusCard from '../../../components/ui/status-card';
+import { loginUser } from '../../../lib/api';
 
 type LoginState = 'idle' | 'loading' | 'invalidCredentials' | 'success';
 
