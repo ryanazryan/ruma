@@ -8,13 +8,6 @@ export function mapApiProduct(
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .map((media) => media.url)
 
-  const createdAt = new Date(product.createdAt)
-  const now = new Date()
-
-  const diffInDays =
-    (now.getTime() - createdAt.getTime()) /
-    (1000 * 60 * 60 * 24)
-
   return {
     id: product.id,
     sku: product.sku,
@@ -39,8 +32,7 @@ export function mapApiProduct(
     createdAt: product.createdAt,
     updatedAt: product.updatedAt,
 
-    // Business rule:
-    // Product is considered new for 30 days after creation.
-    isNew: diffInDays >= 0 && diffInDays <= 30,
+    // Business rule is determined by the backend.
+    isNew: product.isNew,
   }
 }

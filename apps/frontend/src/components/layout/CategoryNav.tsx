@@ -60,22 +60,39 @@ function CategoryNavContent() {
                         )
 
                         const categoryParam =
-                            categoryUrl.searchParams.get('category')
+                            categoryUrl.searchParams.get(
+                                'category',
+                            )
 
                         const sortParam =
-                            categoryUrl.searchParams.get('sort')
+                            categoryUrl.searchParams.get(
+                                'sort',
+                            )
+
+                        const isBrands =
+                            category.href === '/brands'
 
                         const isActive =
-                            pathname === '/catalogue' &&
-                            (
-                                (isAllProducts &&
-                                    !activeCategory &&
-                                    !activeSort) ||
-                                (categoryParam !== null &&
-                                    activeCategory === categoryParam) ||
-                                (sortParam === 'newest' &&
-                                    activeSort === 'newest')
-                            )
+                            // Brands
+                            (isBrands &&
+                                (pathname === '/brands' ||
+                                    pathname.startsWith(
+                                        '/brands/',
+                                    ))) ||
+
+                            // Catalogue categories / sorting
+                            (!isBrands &&
+                                pathname === '/catalogue' &&
+                                (
+                                    (isAllProducts &&
+                                        !activeCategory &&
+                                        !activeSort) ||
+                                    (categoryParam !== null &&
+                                        activeCategory ===
+                                            categoryParam) ||
+                                    (sortParam === 'newest' &&
+                                        activeSort === 'newest')
+                                ))
 
                         return (
                             <Link
@@ -91,7 +108,8 @@ function CategoryNavContent() {
                                     transition-colors
                                     duration-150
                                     ${
-                                        category.accent
+                                        category.accent &&
+                                        !isActive
                                             ? 'text-gold hover:text-gold'
                                             : isActive
                                               ? 'text-brand'

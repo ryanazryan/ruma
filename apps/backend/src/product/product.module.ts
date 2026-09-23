@@ -5,6 +5,7 @@ import { UsersModule } from '../users/users.module';
 import { SessionsModule } from '../sessions/sessions.module';
 import { ProductController } from './product.controller';
 import { ProductService } from './product.service';
+import { AdminProductController } from './admin/admin-product.controller';
 
 @Module({
   imports: [
@@ -13,7 +14,10 @@ import { ProductService } from './product.service';
     UsersModule,
     SessionsModule,
   ],
-  controllers: [ProductController],
+  controllers: [
+    ProductController,
+    AdminProductController,
+  ],
   providers: [ProductService],
 })
 export class ProductModule {}

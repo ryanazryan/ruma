@@ -137,20 +137,26 @@ export function ProductCard({
                         {product.isNew && (
                             <span
                                 className="
-                                    absolute
-                                    left-3
-                                    top-3
-                                    rounded-sm
-                                    bg-white
-                                    px-2.5
-                                    py-1
-                                    text-[9px]
-                                    font-medium
-                                    uppercase
-                                    tracking-[0.18em]
-                                    text-ink
-                                    shadow-sm
-                                "
+            absolute
+            left-2
+            top-2
+            rounded-sm
+            bg-white
+            px-2
+            py-0.5
+            text-[8px]
+            font-medium
+            uppercase
+            tracking-[0.16em]
+            text-ink
+            shadow-sm
+            sm:left-2.5
+            sm:top-2.5
+            sm:px-2
+            sm:py-1
+            sm:text-[9px]
+            sm:tracking-[0.18em]
+        "
                             >
                                 New
                             </span>

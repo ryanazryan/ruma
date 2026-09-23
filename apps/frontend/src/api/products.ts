@@ -39,6 +39,16 @@ export interface ProductCategory {
   updatedAt: string
 }
 
+export interface ProductInventory {
+  id: string
+  productId: string
+  availableQuantity: number
+  reservedQuantity: number
+  committedQuantity: number
+  lowStockThreshold: number
+  updatedAt: string
+}
+
 export interface ApiProduct {
   id: string
   sku: string
@@ -46,15 +56,22 @@ export interface ApiProduct {
   slug: string
   description: string | null
   price: number
+
+  newUntil: string | null
+  isNew: boolean
+
   brandId: string
   supplierId: string
   categoryId: string
-  createdAt: string
-  updatedAt: string
+
   brand: ProductBrand
   supplier: ProductSupplier
   category: ProductCategory
+  inventory?: ProductInventory
   media: ProductMedia[]
+
+  createdAt: string
+  updatedAt: string
 }
 
 interface ProductsResponse {
@@ -89,6 +106,16 @@ export interface ProductFilterParams {
   maxPrice?: number
 }
 
+export interface ProductInventory {
+  id: string
+  productId: string
+  availableQuantity: number
+  reservedQuantity: number
+  committedQuantity: number
+  lowStockThreshold: number
+  updatedAt: string
+}
+
 export type ProductSortBy = 'price' | 'newest'
 export type ProductSortOrder = 'asc' | 'desc'
 
@@ -103,7 +130,15 @@ export async function getProductBySlug(
 ): Promise<ApiProduct | null> {
   const products = await getProducts()
 
-  return products.find((product) => product.slug === slug) ?? null
+  const product = products.find(
+    (item) => item.slug.toLowerCase() === slug.toLowerCase(),
+  )
+
+  if (!product) {
+    return null
+  }
+
+  return getProductById(product.id)
 }
 
 export async function getProductById(

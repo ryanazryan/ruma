@@ -1,11 +1,24 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { CreateProductDto } from './dto/create-product.dto';
+
+function addProductNewStatus<
+  T extends {
+    newUntil: Date | null;
+  },
+>(product: T) {
+  return {
+    ...product,
+    isNew: product.newUntil !== null && product.newUntil.getTime() > Date.now(),
+  };
+}
 
 @Injectable()
 export class ProductService {
@@ -15,22 +28,24 @@ export class ProductService {
   ) {}
 
   async getProducts() {
-    return this.prisma.product.findMany({
-      include: {
-        brand: true,
-        supplier: true,
-        category: true,
-        media: {
-          orderBy: {
-            sortOrder: 'asc',
-          },
+  const products = await this.prisma.product.findMany({
+    include: {
+      brand: true,
+      supplier: true,
+      category: true,
+      media: {
+        orderBy: {
+          sortOrder: 'asc',
         },
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-  }
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  return products.map(addProductNewStatus);
+}
 
   async getProductById(productId: string) {
     const product = await this.prisma.product.findUnique({
@@ -41,6 +56,7 @@ export class ProductService {
         brand: true,
         supplier: true,
         category: true,
+        inventory: true,
         media: {
           orderBy: {
             sortOrder: 'asc',
@@ -53,7 +69,7 @@ export class ProductService {
       throw new NotFoundException('Product not found.');
     }
 
-    return product;
+    return addProductNewStatus(product);
   }
 
   async getCategories() {
@@ -81,7 +97,7 @@ export class ProductService {
       return [];
     }
 
-    return this.prisma.product.findMany({
+    const products = await this.prisma.product.findMany({
       where: {
         name: {
           contains: normalizedQuery,
@@ -102,6 +118,8 @@ export class ProductService {
         createdAt: 'desc',
       },
     });
+
+    return products.map(addProductNewStatus);
   }
 
   async filterProducts(filters: {
@@ -145,7 +163,7 @@ export class ProductService {
       }
     }
 
-    return this.prisma.product.findMany({
+    const products = await this.prisma.product.findMany({
       where,
       include: {
         brand: true,
@@ -161,25 +179,204 @@ export class ProductService {
         createdAt: 'desc',
       },
     });
+
+    return products.map(addProductNewStatus);
   }
 
   async sortProducts(sortBy: 'price' | 'newest', sortOrder: 'asc' | 'desc') {
-    const orderBy =
-      sortBy === 'price' ? { price: sortOrder } : { createdAt: sortOrder };
+    const products =
+      sortBy === 'newest'
+        ? await this.prisma.product.findMany({
+            where: {
+              newUntil: {
+                gt: new Date(),
+              },
+            },
+            include: {
+              brand: true,
+              supplier: true,
+              category: true,
+              media: {
+                orderBy: {
+                  sortOrder: 'asc',
+                },
+              },
+            },
+            orderBy: {
+              createdAt: 'desc',
+            },
+          })
+        : await this.prisma.product.findMany({
+            include: {
+              brand: true,
+              supplier: true,
+              category: true,
+              media: {
+                orderBy: {
+                  sortOrder: 'asc',
+                },
+              },
+            },
+            orderBy: {
+              price: sortOrder,
+            },
+          });
 
-    return this.prisma.product.findMany({
-      include: {
-        brand: true,
-        supplier: true,
-        category: true,
-        media: {
-          orderBy: {
-            sortOrder: 'asc',
+    return products.map(addProductNewStatus);
+  }
+
+  async createProduct(dto: CreateProductDto, createdByUserId: string) {
+    const existingProduct = await this.prisma.product.findFirst({
+      where: {
+        OR: [
+          {
+            sku: dto.sku,
+          },
+          {
+            slug: dto.slug,
+          },
+        ],
+      },
+      select: {
+        id: true,
+        sku: true,
+        slug: true,
+      },
+    });
+
+    if (existingProduct) {
+      if (existingProduct.sku === dto.sku) {
+        throw new ConflictException('Product SKU already exists.');
+      }
+
+      throw new ConflictException('Product slug already exists.');
+    }
+
+    const brand = await this.prisma.brand.findUnique({
+      where: {
+        id: dto.brandId,
+      },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+
+    if (!brand) {
+      throw new NotFoundException('Brand not found.');
+    }
+
+    if (brand.status !== 'ACTIVE') {
+      throw new BadRequestException('Brand is inactive.');
+    }
+
+    const supplier = await this.prisma.supplier.findUnique({
+      where: {
+        id: dto.supplierId,
+      },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+
+    if (!supplier) {
+      throw new NotFoundException('Supplier not found.');
+    }
+
+    if (supplier.status !== 'ACTIVE') {
+      throw new BadRequestException('Supplier is inactive.');
+    }
+
+    const category = await this.prisma.category.findUnique({
+      where: {
+        id: dto.categoryId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!category) {
+      throw new NotFoundException('Category not found.');
+    }
+
+    let newUntil: Date | null = null;
+
+    if (dto.newUntil) {
+      newUntil = new Date(dto.newUntil);
+
+      if (Number.isNaN(newUntil.getTime())) {
+        throw new BadRequestException('Invalid newUntil date.');
+      }
+
+      if (newUntil.getTime() <= Date.now()) {
+        throw new BadRequestException('newUntil must be a future date.');
+      }
+    }
+
+    const product = await this.prisma.$transaction(async (tx) => {
+      const createdProduct = await tx.product.create({
+        data: {
+          sku: dto.sku,
+          name: dto.name,
+          slug: dto.slug,
+          description: dto.description,
+          price: dto.price,
+          newUntil,
+          weightGram: dto.weightGram,
+          lengthCm: dto.lengthCm,
+          widthCm: dto.widthCm,
+          heightCm: dto.heightCm,
+          brandId: dto.brandId,
+          supplierId: dto.supplierId,
+          categoryId: dto.categoryId,
+        },
+      });
+
+      const inventory = await tx.inventory.create({
+        data: {
+          productId: createdProduct.id,
+          availableQuantity: dto.initialStock,
+          reservedQuantity: 0,
+          committedQuantity: 0,
+          lowStockThreshold: dto.lowStockThreshold ?? 0,
+        },
+      });
+
+      if (dto.initialStock > 0) {
+        await tx.stockMovement.create({
+          data: {
+            inventoryId: inventory.id,
+            type: 'IN',
+            quantity: dto.initialStock,
+            referenceType: 'PRODUCT_INITIAL_STOCK',
+            referenceId: createdProduct.id,
+            reason: 'Initial stock when product was created.',
+            createdByUserId,
+          },
+        });
+      }
+
+      return tx.product.findUniqueOrThrow({
+        where: {
+          id: createdProduct.id,
+        },
+        include: {
+          brand: true,
+          supplier: true,
+          category: true,
+          inventory: true,
+          media: {
+            orderBy: {
+              sortOrder: 'asc',
+            },
           },
         },
-      },
-      orderBy,
+      });
     });
+
+    return addProductNewStatus(product);
   }
 
   async uploadProductMedia(productId: string, file: Buffer, mimeType: string) {
@@ -420,6 +617,8 @@ export class ProductService {
       })
       .slice(0, 8);
 
-    return rankedProducts.map(({ candidate }) => candidate);
+    return rankedProducts.map(({ candidate }) =>
+      addProductNewStatus(candidate),
+    );
   }
 }

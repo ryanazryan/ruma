@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import ChangePasswordForm from './change-password-form';
-import { getCurrentUserWithCookie } from '../../lib/api';
+import { getCurrentUserWithCookie } from '@/lib/api'
 
 export default async function ChangePasswordPage() {
   const cookieStore = await cookies();

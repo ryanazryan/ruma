@@ -1,13 +1,37 @@
-import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator'
 
 export class CreateBrandDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
-  name!: string;
+  name!: string
 
   @IsString()
   @IsNotEmpty()
   @MaxLength(120)
-  slug!: string;
+  slug!: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  tagline?: string
+
+  @IsOptional()
+  @IsString()
+  description?: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(150)
+  origin?: string
+
+  @IsOptional()
+  @IsBoolean()
+  featured?: boolean
 }
