@@ -148,3 +148,35 @@ export async function setDefaultCustomerAddress(
 
   return response.data.address;
 }
+
+export interface CustomerMembership {
+  membershipStatus: 'NON_MEMBER' | 'MEMBER'
+  membershipActivatedAt: string | null
+  qualifyingPurchaseValue: number
+  threshold: number
+}
+
+interface CustomerMembershipResponse {
+  success: boolean
+  message: string
+  data: {
+    membership: CustomerMembership
+  }
+}
+
+export async function getCustomerMembership(
+  cookieHeader?: string,
+): Promise<CustomerMembership> {
+  const response = await apiRequest<CustomerMembershipResponse>(
+    '/customer/membership',
+    cookieHeader
+      ? {
+          headers: {
+            Cookie: cookieHeader,
+          },
+        }
+      : undefined,
+  )
+
+  return response.data.membership
+}

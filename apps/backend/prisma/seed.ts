@@ -662,6 +662,33 @@ async function main() {
   });
 
   // --------------------------------------------------
+  // Membership Progress Test User
+  // --------------------------------------------------
+
+  const membershipProgressCustomer = await prisma.user.upsert({
+    where: {
+      email: 'membership-progress@ruma.test',
+    },
+    update: {
+      fullName: 'Membership Progress Customer',
+      role: 'CUSTOMER',
+      accountStatus: 'ACTIVE',
+      membershipStatus: 'NON_MEMBER',
+      membershipActivatedAt: null,
+      passwordHash: membershipPasswordHash,
+    },
+    create: {
+      fullName: 'Membership Progress Customer',
+      email: 'membership-progress@ruma.test',
+      passwordHash: membershipPasswordHash,
+      role: 'CUSTOMER',
+      accountStatus: 'ACTIVE',
+      membershipStatus: 'NON_MEMBER',
+      membershipActivatedAt: null,
+    },
+  });
+
+  // --------------------------------------------------
   // Notification Test Fixtures
   // --------------------------------------------------
 
@@ -717,6 +744,12 @@ async function main() {
     },
   });
 
+  const serenaProduct = await prisma.product.findUniqueOrThrow({
+    where: {
+      slug: 'serena',
+    },
+  });
+
   // --------------------------------------------------
   // Membership Test Fixture
   // --------------------------------------------------
@@ -764,6 +797,7 @@ async function main() {
         orderId: membershipOrder.id,
         productId: mozakoProduct.id,
         productName: mozakoProduct.name,
+        sku: 'ML-MOZAKO',
         unitPrice: 350000,
         quantity: 1,
         subtotal: 350000,
@@ -772,6 +806,7 @@ async function main() {
         orderId: membershipOrder.id,
         productId: cleoOxygenProduct.id,
         productName: cleoOxygenProduct.name,
+        sku: 'CO-OXYGEN-500ML',
         unitPrice: 13000,
         quantity: 20,
         subtotal: 260000,
@@ -780,6 +815,87 @@ async function main() {
   });
 
   console.log('Membership test fixture seed completed.');
+
+  // --------------------------------------------------
+  // Membership Progress Test Fixture (300K)
+  // --------------------------------------------------
+  // Temporary fixture for reviewing the Membership UI
+  // directly from the main development account.
+
+  const mainCustomer = await prisma.user.findUniqueOrThrow({
+    where: {
+      email: 'naufalazryan05@gmail.com',
+    },
+  });
+
+  await prisma.user.update({
+    where: {
+      id: mainCustomer.id,
+    },
+    data: {
+      membershipStatus: 'NON_MEMBER',
+      membershipActivatedAt: null,
+    },
+  });
+
+  const membershipProgressOrder = await prisma.order.upsert({
+    where: {
+      orderNumber: 'RUMA-MEMBERSHIP-PROGRESS-001',
+    },
+    update: {
+      userId: mainCustomer.id,
+      status: 'COMPLETED',
+      subtotalAmount: 300000,
+      discountAmount: 0,
+      shippingAmount: 0,
+      totalAmount: 300000,
+      shippingRecipientName: mainCustomer.fullName,
+      shippingPhone: '081234567890',
+      shippingAddressLine: 'Jl. Membership Progress No. 1',
+      shippingDistrict: 'Banjarbaru Utara',
+      shippingCity: 'Banjarbaru',
+      shippingProvince: 'Kalimantan Selatan',
+      shippingPostalCode: '70714',
+    },
+    create: {
+      userId: mainCustomer.id,
+      orderNumber: 'RUMA-MEMBERSHIP-PROGRESS-001',
+      status: 'COMPLETED',
+      subtotalAmount: 300000,
+      discountAmount: 0,
+      shippingAmount: 0,
+      totalAmount: 300000,
+      shippingRecipientName: mainCustomer.fullName,
+      shippingPhone: '081234567890',
+      shippingAddressLine: 'Jl. Membership Progress No. 1',
+      shippingDistrict: 'Banjarbaru Utara',
+      shippingCity: 'Banjarbaru',
+      shippingProvince: 'Kalimantan Selatan',
+      shippingPostalCode: '70714',
+    },
+  });
+
+  await prisma.orderItem.deleteMany({
+    where: {
+      orderId: membershipProgressOrder.id,
+    },
+  });
+
+  await prisma.orderItem.create({
+    data: {
+      orderId: membershipProgressOrder.id,
+      productId: serenaProduct.id,
+      productName: serenaProduct.name,
+      sku: serenaProduct.sku,
+      unitPrice: 300000,
+      quantity: 1,
+      subtotal: 300000,
+    },
+  });
+
+  console.log(
+    `Membership progress test fixture seeded for ${mainCustomer.email}: 300K NON_MEMBER.`,
+  );
 
   // --------------------------------------------------
   // Order Test Fixtures
@@ -827,6 +943,7 @@ async function main() {
         orderId: orderA1.id,
         productId: pizzariaProduct.id,
         productName: pizzariaProduct.name,
+        sku: 'ML-PIZZARIA',
         unitPrice: 290000,
         quantity: 1,
         subtotal: 290000,
@@ -835,6 +952,16 @@ async function main() {
         orderId: orderA1.id,
         productId: mozakoProduct.id,
         productName: mozakoProduct.name,
+        sku: 'ML-MOZAKO',
+        unitPrice: 350000,
+        quantity: 1,
+        subtotal: 350000,
+      },
+      {
+        orderId: orderA1.id,
+        productId: mozakoProduct.id,
+        productName: mozakoProduct.name,
+        sku: 'ML-MOZAKO',
         unitPrice: 350000,
         quantity: 1,
         subtotal: 350000,
@@ -883,12 +1010,12 @@ async function main() {
       orderId: orderA2.id,
       productId: pizzariaProduct.id,
       productName: pizzariaProduct.name,
+      sku: 'ML-PIZZARIA',
       unitPrice: 290000,
       quantity: 1,
       subtotal: 290000,
     },
   });
-
   const orderB1 = await prisma.order.upsert({
     where: {
       orderNumber: 'RUMA-ORDER-003',
@@ -930,6 +1057,7 @@ async function main() {
       orderId: orderB1.id,
       productId: mozakoProduct.id,
       productName: mozakoProduct.name,
+      sku: 'ML-MOZAKO',
       unitPrice: 350000,
       quantity: 1,
       subtotal: 350000,
