@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { PricingService } from '../pricing/pricing.service';
@@ -17,6 +21,11 @@ export class CartService {
         id: true,
         name: true,
         price: true,
+        inventory: {
+          select: {
+            availableQuantity: true,
+          },
+        },
         brand: {
           select: {
             name: true,
@@ -61,6 +70,16 @@ export class CartService {
     const resultingQuantity = existingCartItem
       ? existingCartItem.quantity + quantity
       : quantity;
+
+    if (!product.inventory) {
+      throw new BadRequestException('Product inventory not found.');
+    }
+
+    if (resultingQuantity > product.inventory.availableQuantity) {
+      throw new BadRequestException(
+        `Insufficient stock. Available quantity: ${product.inventory.availableQuantity}.`,
+      );
+    }
 
     const cartItem = existingCartItem
       ? await this.prisma.cartItem.update({
@@ -238,11 +257,30 @@ export class CartService {
         id: true,
         cartId: true,
         productId: true,
+        product: {
+          select: {
+            inventory: {
+              select: {
+                availableQuantity: true,
+              },
+            },
+          },
+        },
       },
     });
 
     if (!cartItem) {
       throw new NotFoundException('Cart item not found.');
+    }
+
+    if (!cartItem.product.inventory) {
+      throw new BadRequestException('Product inventory not found.');
+    }
+
+    if (quantity > cartItem.product.inventory.availableQuantity) {
+      throw new BadRequestException(
+        `Insufficient stock. Available quantity: ${cartItem.product.inventory.availableQuantity}.`,
+      );
     }
 
     const updatedCartItem = await this.prisma.cartItem.update({
