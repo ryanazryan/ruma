@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 import { logoutUser } from '@/lib/api'
+import { CustomerMembership } from '@/api/customer'
 
 type AccountTab =
   | 'profile'
@@ -32,6 +33,7 @@ interface CustomerAddress {
 interface AccountPageProps {
   profile?: AccountProfile
   initialAddresses?: CustomerAddress[]
+  membership?: CustomerMembership
 }
 
 function AddressCard({
@@ -180,57 +182,57 @@ function AddressForm({
     placeholder: string
     required?: boolean
   }> = [
-    {
-      key: 'label',
-      label: 'Address label',
-      placeholder:
-        'Home, Office, etc.',
-      required: true,
-    },
-    {
-      key: 'recipientName',
-      label: 'Recipient name',
-      placeholder: 'Full name',
-      required: true,
-    },
-    {
-      key: 'phone',
-      label: 'Phone number',
-      placeholder: '08xxxxxxxxxx',
-      required: true,
-    },
-    {
-      key: 'addressLine',
-      label: 'Address',
-      placeholder:
-        'Street, house number, apartment, etc.',
-      required: true,
-    },
-    {
-      key: 'district',
-      label: 'District',
-      placeholder: 'District',
-      required: true,
-    },
-    {
-      key: 'city',
-      label: 'City',
-      placeholder: 'City',
-      required: true,
-    },
-    {
-      key: 'province',
-      label: 'Province',
-      placeholder: 'Province',
-      required: true,
-    },
-    {
-      key: 'postalCode',
-      label: 'Postal code',
-      placeholder: 'Postal code',
-      required: true,
-    },
-  ]
+      {
+        key: 'label',
+        label: 'Address label',
+        placeholder:
+          'Home, Office, etc.',
+        required: true,
+      },
+      {
+        key: 'recipientName',
+        label: 'Recipient name',
+        placeholder: 'Full name',
+        required: true,
+      },
+      {
+        key: 'phone',
+        label: 'Phone number',
+        placeholder: '08xxxxxxxxxx',
+        required: true,
+      },
+      {
+        key: 'addressLine',
+        label: 'Address',
+        placeholder:
+          'Street, house number, apartment, etc.',
+        required: true,
+      },
+      {
+        key: 'district',
+        label: 'District',
+        placeholder: 'District',
+        required: true,
+      },
+      {
+        key: 'city',
+        label: 'City',
+        placeholder: 'City',
+        required: true,
+      },
+      {
+        key: 'province',
+        label: 'Province',
+        placeholder: 'Province',
+        required: true,
+      },
+      {
+        key: 'postalCode',
+        label: 'Postal code',
+        placeholder: 'Postal code',
+        required: true,
+      },
+    ]
 
   return (
     <div className="space-y-4 rounded-sm border border-line bg-canvas p-5">
@@ -246,7 +248,7 @@ function AddressForm({
             key={field.key}
             className={
               field.key ===
-              'addressLine'
+                'addressLine'
                 ? 'sm:col-span-2'
                 : undefined
             }
@@ -321,6 +323,7 @@ function AddressForm({
 export function AccountPage({
   profile,
   initialAddresses = [],
+  membership,
 }: AccountPageProps) {
   const router = useRouter()
 
@@ -671,7 +674,89 @@ export function AccountPage({
                 </dl>
               )}
             </section>
+            {membership && (
+              <section className="rounded-sm border border-line bg-white p-6">
+                <div>
+                  <h2 className="text-sm font-semibold text-ink">Membership</h2>
+                </div>
 
+                <div className="mt-4 flex items-center gap-2">
+                  <span
+                    className={[
+                      'h-2 w-2 rounded-full',
+                      membership.membershipStatus === 'MEMBER'
+                        ? 'bg-brand'
+                        : 'bg-ink-faint',
+                    ].join(' ')}
+                  />
+
+                  <span className="text-sm font-medium text-ink">
+                    {membership.membershipStatus === 'MEMBER'
+                      ? 'Member'
+                      : 'Not a member'}
+                  </span>
+                </div>
+
+                <div className="mt-6">
+                  <div className="mb-2">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-ink">
+                      Membership progress
+                    </span>
+                  </div>
+
+                  <div className="mb-2 flex items-center justify-between gap-4">
+                    <span className="text-sm font-medium text-ink">
+                      Rp
+                      {membership.qualifyingPurchaseValue.toLocaleString('id-ID')}
+                    </span>
+
+                    <span className="text-xs text-ink-muted">
+                      Rp
+                      {membership.threshold.toLocaleString('id-ID')}
+                    </span>
+                  </div>
+
+                  <div className="h-1.5 overflow-hidden rounded-full bg-line">
+                    <div
+                      className="h-full rounded-full bg-brand transition-all"
+                      style={{
+                        width: `${Math.min(
+                          (membership.qualifyingPurchaseValue /
+                            membership.threshold) *
+                          100,
+                          100,
+                        )}%`,
+                      }}
+                    />
+                  </div>
+
+                  {membership.membershipStatus === 'NON_MEMBER' ? (
+                    <p className="mt-2 text-xs text-ink-muted">
+                      Rp
+                      {Math.max(
+                        membership.threshold -
+                        membership.qualifyingPurchaseValue,
+                        0,
+                      ).toLocaleString('id-ID')}{' '}
+                      qualifying purchase required
+                    </p>
+                  ) : (
+                    membership.membershipActivatedAt && (
+                      <p className="mt-2 text-xs text-ink-muted">
+                        Activated on{' '}
+                        {new Intl.DateTimeFormat('en-US', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        }).format(
+                          new Date(membership.membershipActivatedAt),
+                        )}
+                      </p>
+                    )
+                  )}
+                </div>
+              </section>
+            )}
             {/* Security */}
             <section className="rounded-sm border border-line bg-white p-6">
               <div>
@@ -757,7 +842,7 @@ export function AccountPage({
         {tab === 'addresses' && (
           <div className="space-y-4">
             {addresses.length === 0 &&
-            !isAddingAddress ? (
+              !isAddingAddress ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-line bg-canvas">
                   <svg
@@ -802,7 +887,7 @@ export function AccountPage({
               <>
                 {addresses.map((address) =>
                   editingAddressId ===
-                  address.id ? (
+                    address.id ? (
                     <AddressForm
                       key={address.id}
                       initialAddress={address}

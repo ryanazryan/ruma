@@ -1,7 +1,7 @@
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 
-import { getCustomerAddresses } from '@/api/customer'
+import { getCustomerAddresses, getCustomerMembership } from '@/api/customer'
 import { getCurrentUserWithCookie } from '@/lib/api'
 import { AccountPage } from '@/components/account/AccountPage'
 
@@ -12,9 +12,10 @@ export default async function AccountRoute() {
   const cookieHeader = requestHeaders.get('cookie') ?? ''
 
   try {
-    const [response, addresses] = await Promise.all([
+    const [response, addresses, membership] = await Promise.all([
       getCurrentUserWithCookie(cookieHeader),
       getCustomerAddresses(cookieHeader),
+      getCustomerMembership(cookieHeader),
     ])
 
     const user = response.data.user
@@ -30,6 +31,7 @@ export default async function AccountRoute() {
           }).format(new Date(user.createdAt)),
         }}
         initialAddresses={addresses}
+        membership={membership}
       />
     )
   } catch {
